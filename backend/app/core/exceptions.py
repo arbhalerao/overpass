@@ -99,6 +99,13 @@ class AircraftProviderRateLimitError(AircraftProviderError):
         super().__init__(message, details=merged)
 
 
+class SatelliteDataError(ProviderError):
+    """orbital element data could not be downloaded, parsed or propagated"""
+
+    code = "satellite_data_error"
+    default_message = "Satellite orbital data is currently unavailable."
+
+
 def _json_error(
     status_code: int,
     code: str,
@@ -190,5 +197,6 @@ __all__ = [
     "InvalidGeographicAreaError",
     "OverpassError",
     "ProviderError",
+    "SatelliteDataError",
     "register_exception_handlers",
 ]

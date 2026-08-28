@@ -42,12 +42,22 @@ class Settings(BaseSettings):
     opensky_timeout_seconds: float = Field(default=15.0, gt=0)
     opensky_allow_anonymous: bool = True
 
+    # CelesTrak
+    celestrak_base_url: str = "https://celestrak.org/NORAD/elements/gp.php"
+    celestrak_timeout_seconds: float = Field(default=30.0, gt=0)
+    celestrak_groups: Annotated[list[str], NoDecode] = Field(
+        default_factory=lambda: ["stations", "visual"]
+    )
+    # name searches, for satellites that belong to no curated group
+    # each is a substring match against the catalogue, so "RISAT" picks up the whole family
+    celestrak_names: Annotated[list[str], NoDecode] = Field(default_factory=list)
+
     # caching
     aircraft_cache_ttl_seconds: float = Field(default=5.0, ge=0)
     satellite_cache_ttl_seconds: float = Field(default=7200.0, ge=0)
 
     # validators
-    @field_validator("cors_origins", mode="before")
+    @field_validator("cors_origins", "celestrak_groups", "celestrak_names", mode="before")
     @classmethod
     def _split_csv(cls, value: object) -> object:
         if isinstance(value, str):

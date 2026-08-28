@@ -10,3 +10,8 @@ dist/
 .venv/
 venv/
 env/
+
+# Fetched at runtime: the Skyfield ephemeris and cached CelesTrak elements.
+# Ignore the contents, not the directory, git cannot re-include a file whose parent directory is excluded, so `data/` would swallow .gitkeep with it.
+data/*
+!data/.gitkeep
