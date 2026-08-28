@@ -42,6 +42,10 @@ class Settings(BaseSettings):
     opensky_timeout_seconds: float = Field(default=15.0, gt=0)
     opensky_allow_anonymous: bool = True
 
+    # caching
+    aircraft_cache_ttl_seconds: float = Field(default=5.0, ge=0)
+    satellite_cache_ttl_seconds: float = Field(default=7200.0, ge=0)
+
     # validators
     @field_validator("cors_origins", mode="before")
     @classmethod
