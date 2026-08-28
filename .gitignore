@@ -1,0 +1,6 @@
+# Local configuration
+.env
+.env.local
+.env.*.local
+
+*.log

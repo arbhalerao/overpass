@@ -1,0 +1,29 @@
+[build-system]
+requires = ["hatchling>=1.25"]
+build-backend = "hatchling.build"
+
+[project]
+name = "overpass"
+version = "0.1.0"
+description = "Live 'what is above here?' backend API: aircraft and satellites for a chosen point on Earth."
+readme = "README.md"
+requires-python = ">=3.12"
+authors = [{ name = "Aditya Bhalerao", email = "adityabhalerao.tech@gmail.com" }]
+keywords = ["fastapi", "astronomy", "skyfield", "adsb", "satellites"]
+
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.32",
+    "pydantic>=2.9",
+    "pydantic-settings>=2.6",
+    "python-dotenv>=1.0",
+]
+
+[project.scripts]
+overpass = "app.main:run"
+
+[project.urls]
+Homepage = "https://github.com/arbhalerao/overpass"
+
+[tool.hatch.build.targets.wheel]
+packages = ["app"]
