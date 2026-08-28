@@ -52,6 +52,35 @@ class SkyObject:
 
 
 @dataclass(frozen=True, slots=True)
+class SatelliteObject:
+    """a satellite propagated from cached orbital elements"""
+
+    identity: SkyObject
+    position: HorizontalPosition
+    # NORAD catalog number as a string; CelesTrak numbers are not all 5 digits
+    norad_id: str
+    international_designator: str | None = None
+    # latitude/longitude of the point directly beneath the satellite
+    subpoint_latitude: float | None = None
+    subpoint_longitude: float | None = None
+    # height of the satellite above the WGS-84 ellipsoid, kilometres
+    height_km: float | None = None
+    # geocentric speed, metres per second
+    velocity_mps: float | None = None
+    # rate of change of observer-to-satellite range, metres per second
+    range_rate_mps: float | None = None
+    # whether the satellite itself is in sunlight
+    is_sunlit: bool | None = None
+    # whether it is actually visible to the naked eye: sunlit, above the horizon,
+    # and the observer in darkness. ``None`` when the Sun's position is unknown.
+    is_visible: bool | None = None
+    # age of the orbital elements at the observation time, days
+    element_age_days: float | None = None
+    # the CelesTrak group the elements came from
+    group: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
 class OperatorIdentity:
     """the airline behind a flight, resolved from its callsign"""
 
@@ -119,6 +148,7 @@ __all__ = [
     "HorizontalPosition",
     "ObjectType",
     "OperatorIdentity",
+    "SatelliteObject",
     "SkyObject",
     "SourceReport",
     "SourceStatus",

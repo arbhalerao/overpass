@@ -62,6 +62,9 @@ class Settings(BaseSettings):
     aircraft_cache_ttl_seconds: float = Field(default=5.0, ge=0)
     satellite_cache_ttl_seconds: float = Field(default=7200.0, ge=0)
 
+    # visibility thresholds
+    min_satellite_elevation_deg: float = Field(default=10.0, ge=-90, le=90)
+
     # validators
     @field_validator("cors_origins", "celestrak_groups", "celestrak_names", mode="before")
     @classmethod
