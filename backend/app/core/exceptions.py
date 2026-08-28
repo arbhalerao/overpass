@@ -55,6 +55,50 @@ class InvalidGeographicAreaError(OverpassError):
 # providers
 
 
+class ProviderError(OverpassError):
+    """base class for failures caused by an upstream data provider"""
+
+    status_code = status.HTTP_502_BAD_GATEWAY
+    code = "provider_error"
+    default_message = "An upstream data provider failed."
+
+
+class AircraftProviderError(ProviderError):
+    """the aircraft provider could not satisfy the request"""
+
+    code = "aircraft_provider_error"
+    default_message = "The aircraft data provider is currently unavailable."
+
+
+class AircraftProviderAuthError(AircraftProviderError):
+    """authentication against the aircraft provider failed"""
+
+    status_code = status.HTTP_503_SERVICE_UNAVAILABLE
+    code = "aircraft_provider_auth_error"
+    default_message = "Authentication with the aircraft data provider failed."
+
+
+class AircraftProviderRateLimitError(AircraftProviderError):
+    """the aircraft provider rejected the request for quota reasons"""
+
+    status_code = status.HTTP_429_TOO_MANY_REQUESTS
+    code = "aircraft_provider_rate_limited"
+    default_message = "The aircraft data provider rate limit has been reached."
+
+    def __init__(
+        self,
+        message: str | None = None,
+        *,
+        retry_after_seconds: float | None = None,
+        details: dict[str, Any] | None = None,
+    ) -> None:
+        merged = dict(details or {})
+        if retry_after_seconds is not None:
+            merged["retry_after_seconds"] = retry_after_seconds
+        self.retry_after_seconds = retry_after_seconds
+        super().__init__(message, details=merged)
+
+
 def _json_error(
     status_code: int,
     code: str,
@@ -139,8 +183,12 @@ def register_exception_handlers(app: FastAPI) -> None:
 
 
 __all__ = [
+    "AircraftProviderAuthError",
+    "AircraftProviderError",
+    "AircraftProviderRateLimitError",
     "ConfigurationError",
     "InvalidGeographicAreaError",
     "OverpassError",
+    "ProviderError",
     "register_exception_handlers",
 ]

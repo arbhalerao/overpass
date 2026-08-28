@@ -31,6 +31,17 @@ class Settings(BaseSettings):
         default_factory=lambda: ["http://localhost:3000", "http://localhost:5173"]
     )
 
+    # OpenSky
+    opensky_client_id: str = ""
+    opensky_client_secret: str = ""
+    opensky_base_url: str = "https://opensky-network.org/api"
+    opensky_token_url: str = (
+        "https://auth.opensky-network.org/auth/realms/opensky-network"
+        "/protocol/openid-connect/token"
+    )
+    opensky_timeout_seconds: float = Field(default=15.0, gt=0)
+    opensky_allow_anonymous: bool = True
+
     # validators
     @field_validator("cors_origins", mode="before")
     @classmethod
@@ -53,6 +64,10 @@ class Settings(BaseSettings):
         return value.upper() if isinstance(value, str) else value
 
     # derived helpers
+    @property
+    def has_opensky_credentials(self) -> bool:
+        return bool(self.opensky_client_id and self.opensky_client_secret)
+
     @property
     def is_production(self) -> bool:
         return self.app_env == "production"
