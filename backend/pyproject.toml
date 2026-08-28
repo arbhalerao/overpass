@@ -21,6 +21,7 @@ dependencies = [
     "skyfield>=1.49",
     "numpy>=1.26",
     "python-dotenv>=1.0",
+    "timezonefinder>=8.0",
 ]
 
 [project.scripts]
