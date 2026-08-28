@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from functools import lru_cache
+from pathlib import Path
 from typing import Annotated, Literal
 
 from pydantic import Field, field_validator
@@ -52,6 +53,11 @@ class Settings(BaseSettings):
     # each is a substring match against the catalogue, so "RISAT" picks up the whole family
     celestrak_names: Annotated[list[str], NoDecode] = Field(default_factory=list)
 
+    # astronomy / Skyfield
+    astronomy_data_dir: Path = Path("./data")
+    skyfield_ephemeris: str = "de421.bsp"
+    skyfield_allow_downloads: bool = True
+
     # caching
     aircraft_cache_ttl_seconds: float = Field(default=5.0, ge=0)
     satellite_cache_ttl_seconds: float = Field(default=7200.0, ge=0)
@@ -85,6 +91,14 @@ class Settings(BaseSettings):
     @property
     def is_production(self) -> bool:
         return self.app_env == "production"
+
+    @property
+    def satellite_cache_dir(self) -> Path:
+        return self.astronomy_data_dir / "celestrak"
+
+    def ensure_data_dirs(self) -> None:
+        self.astronomy_data_dir.mkdir(parents=True, exist_ok=True)
+        self.satellite_cache_dir.mkdir(parents=True, exist_ok=True)
 
 
 @lru_cache(maxsize=1)

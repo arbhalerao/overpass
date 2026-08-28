@@ -18,6 +18,8 @@ dependencies = [
     "pydantic-settings>=2.6",
     "httpx>=0.27",
     "anyio>=4.4",
+    "skyfield>=1.49",
+    "numpy>=1.26",
     "python-dotenv>=1.0",
 ]
 

@@ -106,6 +106,17 @@ class SatelliteDataError(ProviderError):
     default_message = "Satellite orbital data is currently unavailable."
 
 
+class AstronomyCalculationError(OverpassError):
+    """a Skyfield calculation or ephemeris load failed"""
+
+    status_code = status.HTTP_503_SERVICE_UNAVAILABLE
+    code = "astronomy_calculation_error"
+    default_message = "Astronomical calculations are currently unavailable."
+
+
+# FastAPI integration
+
+
 def _json_error(
     status_code: int,
     code: str,
@@ -193,6 +204,7 @@ __all__ = [
     "AircraftProviderAuthError",
     "AircraftProviderError",
     "AircraftProviderRateLimitError",
+    "AstronomyCalculationError",
     "ConfigurationError",
     "InvalidGeographicAreaError",
     "OverpassError",
