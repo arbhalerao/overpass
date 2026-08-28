@@ -62,6 +62,10 @@ class Settings(BaseSettings):
     aircraft_cache_ttl_seconds: float = Field(default=5.0, ge=0)
     satellite_cache_ttl_seconds: float = Field(default=7200.0, ge=0)
 
+    # observation area limits
+    radius_min_km: float = Field(default=1.0, gt=0)
+    radius_max_km: float = Field(default=250.0, gt=0)
+
     # visibility thresholds
     min_satellite_elevation_deg: float = Field(default=10.0, ge=-90, le=90)
 
