@@ -69,6 +69,11 @@ class Settings(BaseSettings):
     # visibility thresholds
     min_satellite_elevation_deg: float = Field(default=10.0, ge=-90, le=90)
 
+    # WebSocket
+    ws_aircraft_interval_seconds: float = Field(default=10.0, ge=1.0)
+    ws_satellite_interval_seconds: float = Field(default=5.0, ge=1.0)
+    ws_max_message_bytes: int = Field(default=8192, ge=256)
+
     # validators
     @field_validator("cors_origins", "celestrak_groups", "celestrak_names", mode="before")
     @classmethod

@@ -12,6 +12,7 @@ from fastapi.responses import JSONResponse, RedirectResponse
 from app.api.deps import ServiceContainer
 from app.api.router import api_router
 from app.api.routes.health import APP_VERSION
+from app.api.websocket import router as websocket_router
 from app.clients.celestrak_client import CelestrakClient
 from app.clients.opensky_client import OpenSkyClient
 from app.core.config import Settings, get_settings
@@ -151,6 +152,7 @@ def create_app() -> FastAPI:
     register_exception_handlers(app)
 
     app.include_router(api_router, prefix=API_PREFIX)
+    app.include_router(websocket_router)
 
     @app.get("/", include_in_schema=False)
     async def root() -> RedirectResponse:
