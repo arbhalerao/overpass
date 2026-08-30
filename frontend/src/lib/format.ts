@@ -34,11 +34,15 @@ export function formatSpeed(mps: number | null | undefined): string {
   return `${formatNumber(mps, 1)} m/s · ${formatNumber(mps * 1.94384)} kt`
 }
 
-export function formatVerticalRate(mps: number | null | undefined): string {
-  if (mps === null || mps === undefined || !Number.isFinite(mps)) return DASH
-  if (Math.abs(mps) < 0.5) return 'level'
-  const arrow = mps > 0 ? '▲' : '▼'
-  return `${arrow} ${formatNumber(Math.abs(mps), 1)} m/s`
+export function verticalRate(mps: number | null | undefined): {
+  rising: boolean | null
+  text: string
+} {
+  if (mps === null || mps === undefined || !Number.isFinite(mps)) {
+    return { rising: null, text: DASH }
+  }
+  if (Math.abs(mps) < 0.5) return { rising: null, text: 'level' }
+  return { rising: mps > 0, text: `${formatNumber(Math.abs(mps), 1)} m/s` }
 }
 
 export function formatCoordinate(latitude: number, longitude: number, digits = 4): string {

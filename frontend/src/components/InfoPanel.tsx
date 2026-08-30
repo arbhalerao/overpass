@@ -1,3 +1,5 @@
+import type { ReactNode } from 'react'
+
 import type { LiveScene } from '../hooks/useLiveScene'
 import type {
   Aircraft,
@@ -15,12 +17,13 @@ import {
   formatMetres,
   formatNumber,
   formatSpeed,
-  formatVerticalRate,
+  verticalRate,
 } from '../lib/format'
 import { brandColor } from '../data/airlineBrands'
 import { LAYER_OF, TYPE_ORDER } from '../lib/layers'
 import { compassPoint, projectAircraft } from '../lib/geo'
 import { STATUS_COLOR, TYPE_LABEL } from '../lib/palette'
+import { RateArrow } from './Glyphs'
 import { LayerToggle } from './LayerToggle'
 
 const NO_PLACE_REASON = 'Pick a location first.'
@@ -217,7 +220,17 @@ function DetailHead({
   )
 }
 
-function Row({ label, value }: { label: string; value: string }) {
+function VerticalRate({ mps }: { mps: number | null | undefined }) {
+  const { rising, text } = verticalRate(mps)
+  return (
+    <>
+      {rising !== null && <RateArrow rising={rising} />}
+      {text}
+    </>
+  )
+}
+
+function Row({ label, value }: { label: string; value: ReactNode }) {
   return (
     <div className="row">
       <span className="row__label">{label}</span>
@@ -287,7 +300,7 @@ function AircraftDetail({
               : '—'
           }
         />
-        <Row label="Vertical rate" value={formatVerticalRate(aircraft.vertical_rate_mps)} />
+        <Row label="Vertical rate" value={<VerticalRate mps={aircraft.vertical_rate_mps} />} />
         <Row
           label="Look toward"
           value={

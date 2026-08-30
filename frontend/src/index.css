@@ -678,6 +678,8 @@ button {
 
 .aircraft__glyph {
   fill: var(--aircraft-mark);
+  stroke: var(--aircraft-mark);
+  stroke-linejoin: round;
 }
 
 .aircraft__ground-glyph {
@@ -1733,10 +1735,6 @@ body.leaflet-dragging .map-picker.leaflet-grab {
   gap: 5px;
 }
 
-.locus__size em {
-  font-style: normal;
-  opacity: 0.85;
-}
 
 .locus__sep {
   opacity: 0.4;

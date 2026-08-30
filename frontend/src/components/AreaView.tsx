@@ -5,6 +5,8 @@ import { formatDegrees, formatKm, formatMetres, formatSpeed, plural } from '../l
 import { brandColor } from '../data/airlineBrands'
 import { clampTooltipPercent, compassPoint, projectAircraft } from '../lib/geo'
 import type { Projected } from '../lib/geo'
+import { AIRCRAFT_DRAWN_AT, GLYPH, glyphStroke, glyphTransform } from '../lib/glyphs'
+import { GlyphSwatch } from './Glyphs'
 import { SKY_GRADIENT, TYPE_MARK } from '../lib/palette'
 import { RadarDial } from './RadarDial'
 
@@ -15,9 +17,7 @@ const TRAIL_SAMPLE_MS = 1000
 const LEAD_SECONDS = 60
 const LABEL_DENSITY_LIMIT = 28
 
-const AIRCRAFT_PATH =
-  'M 0,-7 L 1.5,-2.5 L 8,1.5 L 8,3.2 L 1.5,1.5 L 1.5,5 L 3.5,6.6 L 3.5,7.5 L 0,6.4 ' +
-  'L -3.5,7.5 L -3.5,6.6 L -1.5,5 L -1.5,1.5 L -8,3.2 L -8,1.5 L -1.5,-2.5 Z'
+const MARK_SCALE = 0.62
 
 interface Props {
   aircraft: Aircraft[]
@@ -160,21 +160,11 @@ export function AreaView({
           <>
             <div className="legend legend--counted">
               <span className="legend__item">
-                <svg width="13" height="13" viewBox="-10 -10 20 20" aria-hidden="true">
-                  <path d={AIRCRAFT_PATH} transform="scale(1.1)" fill={TYPE_MARK.aircraft} />
-                </svg>
+                <GlyphSwatch type="aircraft" />
                 <strong>{dataOk ? aircraft.length : '—'}</strong> within {radiusKm} km
               </span>
               <span className="legend__item">
-                <svg width="13" height="13" viewBox="-10 -10 20 20" aria-hidden="true">
-                  <path
-                    d={AIRCRAFT_PATH}
-                    transform="scale(1.1)"
-                    fill="none"
-                    stroke={TYPE_MARK.aircraft}
-                    strokeWidth={1.6}
-                  />
-                </svg>
+                <GlyphSwatch type="aircraft" faded />
                 <strong>{dataOk ? airlineCount : '—'}</strong>{' '}
                 {dataOk && airlineCount === 1 ? 'airline' : 'airlines'}
               </span>
@@ -274,8 +264,9 @@ function AircraftMark({
       ) : (
         <path
           className="aircraft__glyph"
-          d={AIRCRAFT_PATH}
-          transform={`rotate(${heading}) scale(0.62)`}
+          d={GLYPH.aircraft.d}
+          transform={glyphTransform('aircraft', MARK_SCALE, heading - AIRCRAFT_DRAWN_AT)}
+          strokeWidth={glyphStroke('aircraft', MARK_SCALE, GLYPH.aircraft.weight)}
         />
       )}
 

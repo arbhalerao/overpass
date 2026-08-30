@@ -4,12 +4,17 @@ import type { Satellite, SkyConditions } from '../api/types'
 import { formatDegrees, formatKm, plural } from '../lib/format'
 import { clampTooltipPercent, compassPoint, skyToDome } from '../lib/geo'
 import { SKY_CONDITION_NOTE, SKY_GRADIENT, TYPE_MARK } from '../lib/palette'
+import { GlyphSwatch } from './Glyphs'
+import { FADED_OPACITY, glyphPaint } from '../lib/glyphs'
 import { RadarDial } from './RadarDial'
 
 const R = 100
 const VIEW = 115
 
 const LABEL_DENSITY_LIMIT = 10
+
+const MARK_SCALE = 0.66
+
 
 function elevationRings(floorDeg: number): Array<{ fraction: number; label: string }> {
   const span = 90 - floorDeg
@@ -118,20 +123,11 @@ export function SkyDome({
           <>
             <div className="legend legend--counted">
               <span className="legend__item">
-                <svg width="13" height="13" viewBox="-10 -10 20 20" aria-hidden="true">
-                  <path d="M 0,-7 L 7,0 L 0,7 L -7,0 Z" fill={TYPE_MARK.satellite} />
-                </svg>
+                <GlyphSwatch type="satellite" />
                 <strong>{dataOk ? visibleCount : '—'}</strong> you could see now
               </span>
               <span className="legend__item">
-                <svg width="13" height="13" viewBox="-10 -10 20 20" aria-hidden="true">
-                  <path
-                    d="M 0,-7 L 7,0 L 0,7 L -7,0 Z"
-                    fill="none"
-                    stroke={TYPE_MARK.satellite}
-                    strokeWidth={1.8}
-                  />
-                </svg>
+                <GlyphSwatch type="satellite" faded />
                 <strong>{dataOk ? satellites.length - visibleCount : '—'}</strong> {hollowMeaning}
               </span>
             </div>
@@ -196,11 +192,8 @@ function SatelliteMark({
       <circle r={8} className="mark__hit" />
       {selected && <circle r={10} className="mark__ring" />}
       <path
-        d="M 0,-4.6 L 4.6,0 L 0,4.6 L -4.6,0 Z"
-        fill={visible ? TYPE_MARK.satellite : 'none'}
-        stroke={TYPE_MARK.satellite}
-        strokeWidth={visible ? 0.8 : 1.1}
-        opacity={visible ? 1 : 0.65}
+        {...glyphPaint('satellite', MARK_SCALE)}
+        opacity={visible ? 1 : FADED_OPACITY}
       />
       {(visible || selected || showLabel) && (
         <text className="mark__label" x={x > 0 ? -8 : 8} y={3.5} textAnchor={x > 0 ? 'end' : 'start'}>

@@ -1,5 +1,6 @@
 import type { Observer } from '../api/types'
 import { DASH, formatCoordinate } from '../lib/format'
+import { GlyphFor } from './Glyphs'
 
 interface Props {
   center: Observer | null
@@ -18,9 +19,11 @@ export function Locus({
         {center ? formatCoordinate(center.latitude, center.longitude) : DASH}
       </span>
       <span className="locus__size">
-        <em>◆</em> above {minSatelliteElevationDeg}°
+        <GlyphFor type="satellite" size={11} />
+        above {minSatelliteElevationDeg}°
         <span className="locus__sep" aria-hidden="true">·</span>
-        <em>✈</em> {radiusKm} km
+        <GlyphFor type="aircraft" size={11} />
+        {radiusKm} km
       </span>
     </div>
   )
