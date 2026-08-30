@@ -9,7 +9,7 @@ import { SKY_GRADIENT, TYPE_MARK } from '../lib/palette'
 import { RadarDial } from './RadarDial'
 
 const HALF = 100
-const VIEW = 128
+const VIEW = 115
 const TRAIL_LENGTH = 20
 const TRAIL_SAMPLE_MS = 1000
 const LEAD_SECONDS = 60
@@ -280,7 +280,7 @@ function AircraftMark({
       )}
 
       {(showLabel || selected) && (
-        <text className="aircraft__label" x={7} y={-6}>
+        <text className="aircraft__label" x={x > 0 ? -7 : 7} y={-6} textAnchor={x > 0 ? 'end' : 'start'}>
           {label}
         </text>
       )}

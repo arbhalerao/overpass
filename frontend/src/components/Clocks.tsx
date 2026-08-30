@@ -9,6 +9,9 @@ interface Props {
   onChange: (mode: TimeMode, isoTime: string | null) => void
 }
 
+// NOTE(aditya): made clocks read-only, flip this to true to bring it back
+const TIME_PICKER_ENABLED = false
+
 //  the viewer's own zone, as the browser reports it
 const VIEWER_ZONE = Intl.DateTimeFormat().resolvedOptions().timeZone
 
@@ -141,7 +144,8 @@ export function Clocks({ observation, instant, timeMode, onChange }: Props) {
           <button
             key={face.key}
             type="button"
-            className={`clock${open ? ' is-open' : ''}`}
+            className={`clock${open ? ' is-open' : ''}${TIME_PICKER_ENABLED ? '' : ' is-static'}`}
+            disabled={!TIME_PICKER_ENABLED}
             onClick={() => {
               setEntryZone({ zone: face.zone, phrase: entryPhrase(face.icon) })
               setOpen((was) => !was || entryZone?.zone !== face.zone)
@@ -161,7 +165,7 @@ export function Clocks({ observation, instant, timeMode, onChange }: Props) {
               : face.icon === 'you'
                 ? 'Your local time'
                 : 'Coordinated Universal Time'
-              }: ${clockIn(instant, face.zone)}. Click to change the observation time.`}
+              }: ${clockIn(instant, face.zone)}${TIME_PICKER_ENABLED ? '. Click to change the observation time.' : ''}`}
           >
             <span className="clock__label">
               <ClockIcon kind={face.icon} />
@@ -174,7 +178,7 @@ export function Clocks({ observation, instant, timeMode, onChange }: Props) {
         ))}
       </div>
 
-      {open && (
+      {TIME_PICKER_ENABLED && open && (
         <TimePopover
           instant={instant}
           timeMode={timeMode}
@@ -281,9 +285,7 @@ function TimePopover({
     <div className="timepop" role="dialog" aria-label="Set observation time">
       <div className="timepop__head">
         <span>Observation time</span>
-        <span className="timepop__zone">
-          Enter it in {zonePhrase}. All three clocks move together.
-        </span>
+        <span className="timepop__zone">Enter it in {zonePhrase}.</span>
       </div>
 
       <input
@@ -314,7 +316,14 @@ function TimePopover({
             onClose()
           }}
         >
-          {timeMode === 'live' ? '● Following now' : 'Back to now'}
+          {timeMode === 'live' ? (
+            <>
+              <span className="timepop__pip" aria-hidden="true" />
+              Live
+            </>
+          ) : (
+            'Go live'
+          )}
         </button>
         <button type="button" className="timepop__done" onClick={onClose}>
           Done

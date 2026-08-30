@@ -33,7 +33,6 @@ export function LayerToggle({
       onClick={() => onToggle(layer)}
     >
       <span className="switch__track" aria-hidden="true">
-        <span className="switch__state">{disabled ? 'N/A' : active ? 'ON' : 'OFF'}</span>
         <span className="switch__knob" />
       </span>
     </button>

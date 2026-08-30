@@ -193,10 +193,10 @@ export function RadarDial({
       </g>
 
       <g className="radar__compass">
-        <text x={0} y={-radius - 14}>N</text>
-        <text x={radius + 17} y={0}>E</text>
-        <text x={0} y={radius + 19}>S</text>
-        <text x={-radius - 17} y={0}>W</text>
+        <text x={0} y={-radius - 5}>N</text>
+        <text x={radius + 6} y={0}>E</text>
+        <text x={0} y={radius + 9}>S</text>
+        <text x={-radius - 6} y={0}>W</text>
       </g>
 
       <g className="radar__origin">

@@ -2,10 +2,12 @@ import { useCallback, useMemo, useState } from 'react'
 
 import type { LayerName, LayerSelection, Observer, TimeMode } from './api/types'
 import { Header } from './components/Header'
+import { ConnectionBadge } from './components/ConnectionBadge'
 import { GlyphFor } from './components/Glyphs'
-import { LayerToggle } from './components/LayerToggle'
 import { InfoPanel } from './components/InfoPanel'
 import { LocationPanel } from './components/LocationPanel'
+import { Locus } from './components/Locus'
+import { Clocks } from './components/Clocks'
 import { SkyDome } from './components/SkyDome'
 import { AreaView } from './components/AreaView'
 import { useInitialLocation } from './hooks/useInitialLocation'
@@ -101,21 +103,7 @@ export default function App() {
 
   return (
     <div className="app">
-      <Header
-        center={center}
-        radiusKm={radiusKm}
-        minSatelliteElevationDeg={minSatelliteElevationDeg}
-        timeMode={timeMode}
-        instant={instant}
-        observation={scene.observation}
-        status={status}
-        statusDetail={statusDetail}
-        streaming={activeInclude.satellites || activeInclude.aircraft}
-        locationSource={locationSource}
-        onOpenLocation={openLocation}
-        onTimeModeChange={changeTimeMode}
-        onReconnect={reconnect}
-      />
+      <Header />
 
       {lastError && (
         <div className="banner" role="status">
@@ -140,13 +128,6 @@ export default function App() {
                 at the edge, north at the top.
               </p>
             </div>
-            <LayerToggle
-              layer="satellites"
-              type="satellite"
-              label="Satellites"
-              active={include.satellites}
-              onToggle={toggleLayer}
-            />
           </div>
           <div className="viz-frame">
             <SkyDome
@@ -163,6 +144,38 @@ export default function App() {
           {!hasData && <div className="stage__loading">Waiting for the first scene…</div>}
         </section>
 
+        <div className="rail">
+          <ConnectionBadge
+            status={status}
+            detail={statusDetail}
+            streaming={activeInclude.satellites || activeInclude.aircraft}
+            timeMode={timeMode}
+            onReconnect={reconnect}
+          />
+          <Locus
+            center={center}
+            radiusKm={radiusKm}
+            minSatelliteElevationDeg={minSatelliteElevationDeg}
+            locationSource={locationSource}
+            onOpen={openLocation}
+          />
+          <Clocks
+            observation={scene.observation}
+            instant={instant}
+            timeMode={timeMode}
+            onChange={changeTimeMode}
+          />
+          <InfoPanel
+            scene={scene}
+            include={include}
+            unavailable={aircraftAvailable ? undefined : { aircraft: AIRCRAFT_TIME_NOTE }}
+            selectedId={selectedId}
+            onSelect={setSelectedId}
+            onToggle={toggleLayer}
+            now={now}
+          />
+        </div>
+
         <section className="stage__area" aria-label="Aircraft around you">
           <div className="stage__head">
             <div className="stage__caption">
@@ -175,15 +188,6 @@ export default function App() {
                 north at the top. Each plane points the way it is flying.
               </p>
             </div>
-            <LayerToggle
-              layer="aircraft"
-              type="aircraft"
-              label="Aircraft"
-              active={include.aircraft && aircraftAvailable}
-              disabled={!aircraftAvailable}
-              disabledReason={AIRCRAFT_TIME_NOTE}
-              onToggle={toggleLayer}
-            />
           </div>
           <div className="viz-frame">
             <AreaView
@@ -201,16 +205,6 @@ export default function App() {
           </div>
         </section>
 
-        <div className="rail">
-          <InfoPanel
-            scene={scene}
-            include={activeInclude}
-            unavailable={aircraftAvailable ? undefined : { aircraft: AIRCRAFT_TIME_NOTE }}
-            selectedId={selectedId}
-            onSelect={setSelectedId}
-            now={now}
-          />
-        </div>
       </main>
 
       <LocationPanel

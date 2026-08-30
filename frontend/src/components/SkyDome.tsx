@@ -7,7 +7,7 @@ import { SKY_CONDITION_NOTE, SKY_GRADIENT, TYPE_MARK } from '../lib/palette'
 import { RadarDial } from './RadarDial'
 
 const R = 100
-const VIEW = 130
+const VIEW = 115
 
 const LABEL_DENSITY_LIMIT = 10
 
@@ -201,7 +201,7 @@ function SatelliteMark({
         opacity={visible ? 1 : 0.65}
       />
       {(visible || selected || showLabel) && (
-        <text className="mark__label" x={8} y={3.5}>
+        <text className="mark__label" x={x > 0 ? -8 : 8} y={3.5} textAnchor={x > 0 ? 'end' : 'start'}>
           {shortName(satellite.name)}
         </text>
       )}

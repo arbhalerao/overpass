@@ -3,7 +3,6 @@ import type {
   Aircraft,
   LayerName,
   LayerSelection,
-  ObjectType,
   Satellite,
   SourceStatus,
 } from '../api/types'
@@ -17,13 +16,12 @@ import {
   formatNumber,
   formatSpeed,
   formatVerticalRate,
-  titleCase,
 } from '../lib/format'
 import { brandColor } from '../data/airlineBrands'
-import { LAYER_OF, TYPE_ORDER, byLayerOrder } from '../lib/layers'
+import { LAYER_OF, TYPE_ORDER } from '../lib/layers'
 import { compassPoint, projectAircraft } from '../lib/geo'
 import { STATUS_COLOR, TYPE_LABEL } from '../lib/palette'
-import { GlyphFor } from './Glyphs'
+import { LayerToggle } from './LayerToggle'
 
 interface Props {
   scene: LiveScene
@@ -31,55 +29,113 @@ interface Props {
   unavailable?: Partial<Record<LayerName, string>>
   selectedId: string | null
   onSelect: (id: string | null) => void
+  onToggle: (layer: LayerName) => void
   now: number
 }
 
-export function InfoPanel({ scene, include, unavailable, selectedId, onSelect, now }: Props) {
-  const visibleSatellites = scene.satellites.filter((satellite) => satellite.is_visible).length
-  const unanswered = new Set(
-    scene.sources.filter((source) => source.status === 'error').map((source) => source.source),
+export function InfoPanel({
+  scene,
+  include,
+  unavailable,
+  selectedId,
+  onSelect,
+  onToggle,
+  now,
+}: Props) {
+  const sourceOf = new Map(scene.sources.map((source) => [source.source, source]))
+
+  const layers = TYPE_ORDER.map((type) => {
+    const layer = LAYER_OF[type]
+    const source = sourceOf.get(layer)
+    const blocked = unavailable?.[layer]
+    const on = include[layer] && !blocked
+    return {
+      type,
+      layer,
+      on,
+      blocked,
+      count: type === 'satellite' ? scene.satellites.length : scene.aircraft.length,
+      status: SOURCE_PRESENTATION[on && source ? source.status : 'disabled'],
+      message: on ? source?.message : undefined,
+      unanswered: source?.status === 'error',
+    }
+  })
+
+  const seen = new Set<string>()
+  const notes = layers.flatMap((entry) =>
+    [entry.blocked, entry.message].flatMap((text) => {
+      if (!text || seen.has(text)) return []
+      seen.add(text)
+      return [
+        {
+          text,
+          label: TYPE_LABEL[entry.type],
+          color: entry.status.color,
+          fatal: entry.unanswered,
+        },
+      ]
+    }),
   )
-  const countByType: Record<ObjectType, { value: number; enabled: boolean; note?: string }> = {
-    satellite: {
-      value: scene.satellites.length,
-      enabled: include.satellites,
-      note: scene.satellites.length ? `${visibleSatellites} visible now` : undefined,
-    },
-    aircraft: { value: scene.aircraft.length, enabled: include.aircraft },
-  }
-  const counts = TYPE_ORDER.map((type) => ({ type, ...countByType[type] }))
+  const errors = notes.filter((note) => note.fatal).length
+  const summary = [
+    errors && `${errors} ${errors === 1 ? 'error' : 'errors'}`,
+    notes.length - errors &&
+      `${notes.length - errors} ${notes.length - errors === 1 ? 'warning' : 'warnings'}`,
+  ]
+    .filter(Boolean)
+    .join(', ')
 
   return (
     <aside className="info">
-      <div className="counts">
-        {counts.map((count) => (
-          <div key={count.type} className={`tile${count.enabled ? '' : ' is-off'}`}>
-            <div className="tile__head">
-              <GlyphFor type={count.type} size={13} muted={!count.enabled} />
-              <span className="tile__label">{TYPE_LABEL[count.type]}</span>
-            </div>
-            <span className="tile__value">
-              {!count.enabled || unanswered.has(LAYER_OF[count.type])
-                ? '—'
-                : formatNumber(count.value)}
+      <div className="layers">
+        {layers.map((entry) => (
+          <div key={entry.layer} className={`layer${entry.on ? '' : ' is-off'}`}>
+            <span className="layer__label">
+              <span
+                className="layer__health"
+                style={{ color: entry.status.color }}
+                data-tip={entry.blocked ? 'Unavailable' : entry.status.label}
+                role="img"
+                aria-label={`Feed ${entry.blocked ? 'unavailable' : entry.status.label.toLowerCase()}`}
+              >
+                <em className={`layer__dot${entry.on && !entry.unanswered ? ' is-live' : ''}`} />
+              </span>
+              {TYPE_LABEL[entry.type]}
             </span>
-            {count.enabled &&
-              (unanswered.has(LAYER_OF[count.type]) ? (
-                <span className="tile__note">no data</span>
-              ) : (
-                count.note && <span className="tile__note">{count.note}</span>
-              ))}
+            <span className="layer__value">
+              {!entry.on || entry.unanswered ? '—' : formatNumber(entry.count)}
+            </span>
+            <div className="layer__foot">
+              <LayerToggle
+                layer={entry.layer}
+                type={entry.type}
+                label={TYPE_LABEL[entry.type]}
+                active={entry.on}
+                disabled={Boolean(entry.blocked)}
+                disabledReason={entry.blocked}
+                onToggle={onToggle}
+              />
+            </div>
           </div>
         ))}
       </div>
 
-      <Sources
-        sources={scene.sources}
-        warnings={scene.warnings}
-        partial={scene.partial}
-        include={include}
-        unavailable={unavailable}
-      />
+      {notes.length > 0 && (
+        <details className="notes">
+          <summary>{summary}</summary>
+          <ul>
+            {notes.map((note) => (
+              <li key={note.text}>
+                <em style={{ background: note.color }} aria-hidden="true" />
+                <div>
+                  <strong>{note.label}</strong>
+                  {note.text}
+                </div>
+              </li>
+            ))}
+          </ul>
+        </details>
+      )}
 
       <Detail scene={scene} selectedId={selectedId} onSelect={onSelect} now={now} />
     </aside>
@@ -101,11 +157,13 @@ function Detail({
 }) {
   if (!selectedId) {
     return (
-      <section className="card card--empty">
-        <p>
-          Select anything on either dial to see everything the backend knows
-          about it.
-        </p>
+      <section className="card card--hint" aria-label="Nothing selected yet">
+        <svg viewBox="0 0 44 40" className="hint__mark" aria-hidden="true">
+          <circle cx="18" cy="18" r="11" />
+          <circle cx="18" cy="18" r="3.5" />
+          <path d="M18 2.5v5M18 28.5v5M2.5 18h5M28.5 18h5" />
+          <path className="hint__cursor" d="M24 21.5 39 27l-6.2 1.9L30.4 35z" />
+        </svg>
       </section>
     )
   }
@@ -117,8 +175,8 @@ function Detail({
     return (
       <section className="card card--empty">
         <p>That object is no longer in the scene.</p>
-        <button type="button" className="button button--ghost" onClick={() => onSelect(null)}>
-          Clear selection
+        <button type="button" className="button button--ghost card__clear" onClick={() => onSelect(null)}>
+          Close
         </button>
       </section>
     )
@@ -129,30 +187,24 @@ function Detail({
       {aircraft && <AircraftDetail aircraft={aircraft} scene={scene} now={now} />}
       {satellite && <SatelliteDetail satellite={satellite} />}
       <button type="button" className="button button--ghost card__clear" onClick={() => onSelect(null)}>
-        Clear selection
+        Close
       </button>
     </section>
   )
 }
 
 function DetailHead({
-  type,
   title,
   subtitle,
   accent,
 }: {
-  type: ObjectType
   title: string
   subtitle: string
   accent?: string
 }) {
   return (
     <header className="card__head">
-      {accent ? (
-        <span className="card__accent" style={{ background: accent }} aria-hidden="true" />
-      ) : (
-        <GlyphFor type={type} size={18} />
-      )}
+      {accent && <span className="card__accent" style={{ background: accent }} aria-hidden="true" />}
       <div>
         <h3>{title}</h3>
         <p>{subtitle}</p>
@@ -186,7 +238,6 @@ function AircraftDetail({
   return (
     <>
       <DetailHead
-        type="aircraft"
         title={aircraft.flight_number ?? aircraft.callsign ?? aircraft.icao24.toUpperCase()}
         subtitle={
           aircraft.airline
@@ -260,11 +311,6 @@ function AircraftDetail({
           }
         />
       </div>
-      <p className="card__note">
-        {projected?.stale
-          ? 'This fix is over two minutes old, so the icon sits at its last reported position rather than a projected one.'
-          : 'The icon is dead-reckoned from the last fix using heading and ground speed. The backend does not extrapolate.'}
-      </p>
     </>
   )
 }
@@ -273,7 +319,6 @@ function SatelliteDetail({ satellite }: { satellite: Satellite }) {
   return (
     <>
       <DetailHead
-        type="satellite"
         title={satellite.name}
         subtitle={`NORAD ${satellite.norad_id}${satellite.international_designator ? ` · ${satellite.international_designator}` : ''
           }`}
@@ -320,11 +365,6 @@ function SatelliteDetail({ satellite }: { satellite: Satellite }) {
         )}
         {satellite.group && <Row label="CelesTrak group" value={satellite.group} />}
       </div>
-      <p className="card__note">
-        Propagated with SGP4 from cached CelesTrak elements. Accuracy degrades roughly a
-        kilometre per day of element age. A satellite is only visible to the eye when it
-        is still catching sunlight while the ground below is already dark.
-      </p>
     </>
   )
 }
@@ -333,80 +373,10 @@ function SatelliteDetail({ satellite }: { satellite: Satellite }) {
 
 const SOURCE_PRESENTATION: Record<
   SourceStatus['status'],
-  { color: string; icon: string; label: string }
+  { color: string; label: string }
 > = {
-  ok: { color: STATUS_COLOR.good, icon: '●', label: 'OK' },
-  degraded: { color: STATUS_COLOR.warning, icon: '▲', label: 'Degraded' },
-  error: { color: STATUS_COLOR.critical, icon: '✕', label: 'Failed' },
-  disabled: { color: '#5c6880', icon: '○', label: 'Off' },
-}
-
-function Sources({
-  sources,
-  warnings,
-  partial,
-  include,
-  unavailable,
-}: {
-  sources: SourceStatus[]
-  warnings: string[]
-  partial: boolean
-  include: LayerSelection
-  unavailable?: Partial<Record<LayerName, string>>
-}) {
-  if (sources.length === 0) return null
-
-  const isOn = (source: SourceStatus) => include[source.source as LayerName] ?? true
-  const silenced = new Set(
-    sources.filter((source) => !isOn(source) && source.message).map((source) => source.message),
-  )
-  const live = sources.filter(isOn)
-  const stillPartial = partial && live.some((source) => source.status !== 'ok')
-  const shown = warnings.filter((warning) => !silenced.has(warning))
-
-  const blocked = Object.entries(unavailable ?? {}) as Array<[LayerName, string]>
-  const withReasons = [...shown, ...blocked.map(([, reason]) => reason)]
-  const inWarnings = new Set(withReasons)
-
-  return (
-    <section className="card card--sources">
-      <header className="card__head card__head--plain">
-        <h3>Data sources</h3>
-        {stillPartial && <span className="badge badge--warn">Partial scene</span>}
-      </header>
-
-      <ul className="sources">
-        {byLayerOrder(sources, (source) => source.source).map((source) => {
-          const blockedReason = unavailable?.[source.source as LayerName]
-          const on = isOn(source) && !blockedReason
-          const presentation = SOURCE_PRESENTATION[on ? source.status : 'disabled']
-          return (
-            <li key={source.source} className={`source${on ? '' : ' is-off'}`}>
-              <span className="source__icon" style={{ color: presentation.color }} aria-hidden="true">
-                {presentation.icon}
-              </span>
-              <span className="source__name">{titleCase(source.source)}</span>
-              <span className="source__state" style={{ color: presentation.color }}>
-                {blockedReason ? 'Unavailable' : presentation.label}
-              </span>
-              <span className="source__count">
-                {on && source.status !== 'disabled' ? formatNumber(source.object_count) : ''}
-              </span>
-              {on && source.message && !inWarnings.has(source.message) && (
-                <p className="source__message">{source.message}</p>
-              )}
-            </li>
-          )
-        })}
-      </ul>
-
-      {withReasons.length > 0 && (
-        <ul className="warnings">
-          {withReasons.map((warning) => (
-            <li key={warning}>{warning}</li>
-          ))}
-        </ul>
-      )}
-    </section>
-  )
+  ok: { color: STATUS_COLOR.good, label: 'OK' },
+  degraded: { color: STATUS_COLOR.warning, label: 'Degraded' },
+  error: { color: STATUS_COLOR.critical, label: 'Failed' },
+  disabled: { color: '#5c6880', label: 'Off' },
 }
