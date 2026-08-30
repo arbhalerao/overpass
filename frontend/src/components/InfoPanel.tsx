@@ -23,10 +23,13 @@ import { compassPoint, projectAircraft } from '../lib/geo'
 import { STATUS_COLOR, TYPE_LABEL } from '../lib/palette'
 import { LayerToggle } from './LayerToggle'
 
+const NO_PLACE_REASON = 'Pick a location first.'
+
 interface Props {
   scene: LiveScene
   include: LayerSelection
   unavailable?: Partial<Record<LayerName, string>>
+  located: boolean
   selectedId: string | null
   onSelect: (id: string | null) => void
   onToggle: (layer: LayerName) => void
@@ -37,6 +40,7 @@ export function InfoPanel({
   scene,
   include,
   unavailable,
+  located,
   selectedId,
   onSelect,
   onToggle,
@@ -48,7 +52,7 @@ export function InfoPanel({
     const layer = LAYER_OF[type]
     const source = sourceOf.get(layer)
     const blocked = unavailable?.[layer]
-    const on = include[layer] && !blocked
+    const on = located && include[layer] && !blocked
     return {
       type,
       layer,
@@ -111,8 +115,8 @@ export function InfoPanel({
                 type={entry.type}
                 label={TYPE_LABEL[entry.type]}
                 active={entry.on}
-                disabled={Boolean(entry.blocked)}
-                disabledReason={entry.blocked}
+                disabled={!located || Boolean(entry.blocked)}
+                disabledReason={entry.blocked ?? (located ? undefined : NO_PLACE_REASON)}
                 onToggle={onToggle}
               />
             </div>

@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import type { ObservationContext, TimeMode } from '../api/types'
 
 interface Props {
+  placed: boolean
   observation: ObservationContext | null
   instant: string | null
   timeMode: TimeMode
@@ -83,7 +84,7 @@ function awayFromNow(instant: string | null): string {
   return delta > 0 ? `in ${parts.join(' ')}` : `${parts.join(' ')} ago`
 }
 
-export function Clocks({ observation, instant, timeMode, onChange }: Props) {
+export function Clocks({ placed, observation, instant, timeMode, onChange }: Props) {
   const [open, setOpen] = useState(false)
   const [entryZone, setEntryZone] = useState<{ zone: string; phrase: string } | null>(null)
   const rootRef = useRef<HTMLDivElement | null>(null)
@@ -112,14 +113,16 @@ export function Clocks({ observation, instant, timeMode, onChange }: Props) {
     label: string
     zone: string
     offset: number | null
+    blank?: boolean
   }> = [
       { key: 'utc', icon: 'utc', label: 'UTC', zone: 'UTC', offset: null },
       {
         key: 'there',
         icon: 'pin',
-        label: observedZone ? 'Pin' : 'At sea',
+        label: observation && !observedZone ? 'At sea' : 'Pin',
         zone: observedZone ?? 'UTC',
         offset: observation?.utc_offset_minutes ?? null,
+        blank: !placed || observation === null,
       },
       {
         key: 'you',
@@ -172,8 +175,8 @@ export function Clocks({ observation, instant, timeMode, onChange }: Props) {
               {face.label}
               {face.offset !== null && <em>{offsetLabel(face.offset)}</em>}
             </span>
-            <span className="clock__time">{clockIn(instant, face.zone)}</span>
-            <span className="clock__date">{dateIn(instant, face.zone)}</span>
+            <span className="clock__time">{clockIn(face.blank ? null : instant, face.zone)}</span>
+            <span className="clock__date">{dateIn(face.blank ? null : instant, face.zone)}</span>
           </button>
         ))}
       </div>

@@ -52,9 +52,10 @@ export function ConnectionBadge({
     <button
       type="button"
       className="conn"
+      disabled={!faulted}
       title={hint}
       onClick={onReconnect}
-      aria-label={`Connection: ${label}. ${hint} Click to reconnect.`}
+      aria-label={`Connection: ${label}. ${hint}${faulted ? ' Click to reconnect.' : ''}`}
     >
       <span
         className={`conn__dot${

@@ -28,6 +28,7 @@ interface Props {
   selectedId: string | null
   onSelect: (id: string | null) => void
   enabled: boolean
+  offReason?: string
   dataOk: boolean
   minElevationDeg: number
   refreshSeconds: number | null
@@ -39,6 +40,7 @@ export function SkyDome({
   selectedId,
   onSelect,
   enabled,
+  offReason,
   dataOk,
   minElevationDeg,
   refreshSeconds,
@@ -144,7 +146,7 @@ export function SkyDome({
             )}
           </>
         ) : (
-          <p className="dial__note">Satellite tracking is switched off.</p>
+          <p className="dial__note">{offReason ?? 'Satellite tracking is switched off.'}</p>
         )}
       </div>
     </div>

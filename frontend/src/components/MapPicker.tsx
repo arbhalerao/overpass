@@ -3,9 +3,10 @@ import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 
 import type { Observer } from '../api/types'
+import terminator from '@joergdietrich/leaflet.terminator'
 
 interface Props {
-  center: Observer
+  center: Observer | null
   radiusKm: number
   onPick: (center: Observer) => void
 }
@@ -15,6 +16,7 @@ export function MapPicker({ center, radiusKm, onPick }: Props) {
   const mapRef = useRef<L.Map | null>(null)
   const markerRef = useRef<L.Marker | null>(null)
   const circleRef = useRef<L.Circle | null>(null)
+  const nightRef = useRef<ReturnType<typeof terminator> | null>(null)
   const pickRef = useRef(onPick)
   useEffect(() => {
     pickRef.current = onPick
@@ -29,31 +31,49 @@ export function MapPicker({ center, radiusKm, onPick }: Props) {
     const { center: start, radiusKm: startRadius } = initialRef.current
 
     const map = L.map(container, {
-      center: [start.latitude, start.longitude],
-      zoom: zoomForSize(startRadius),
+      center: start ? [start.latitude, start.longitude] : OPENING_VIEW,
+      zoom: start ? zoomForSize(startRadius) : OPENING_ZOOM,
       zoomControl: true,
       attributionControl: true,
       worldCopyJump: true,
+      // one world, and no zooming out past what the tiles cover
+      minZoom: 2,
+      maxBounds: [
+        [-85, -180],
+        [85, 180],
+      ],
+      maxBoundsViscosity: 1,
     })
 
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '&copy; OpenStreetMap contributors',
       maxZoom: 19,
+      noWrap: true,
     }).addTo(map)
+
+    const night = terminator({
+      stroke: false,
+      fillColor: '#10182a',
+      fillOpacity: 0.16,
+      interactive: false,
+    }).addTo(map)
+    nightRef.current = night
+    const nightTimer = window.setInterval(() => night.setTime(new Date()), 60_000)
 
     const icon = L.divIcon({
       className: 'map-pin',
-      html: '<span class="map-pin__dot"></span><span class="map-pin__pulse"></span>',
-      iconSize: [18, 18],
-      iconAnchor: [9, 9],
+      html: '<span class="map-pin__dot"></span>',
+      iconSize: [8, 8],
+      iconAnchor: [4, 4],
     })
 
-    const marker = L.marker([start.latitude, start.longitude], {
+    const marker = L.marker(start ? [start.latitude, start.longitude] : OPENING_VIEW, {
       icon,
       draggable: true,
       keyboard: true,
       title: 'Drag to move the observer',
-    }).addTo(map)
+    })
+    if (start) marker.addTo(map)
 
     marker.on('dragend', () => {
       const position = marker.getLatLng()
@@ -79,8 +99,10 @@ export function MapPicker({ center, radiusKm, onPick }: Props) {
       observer.disconnect()
       map.remove()
       mapRef.current = null
+      window.clearInterval(nightTimer)
       markerRef.current = null
       circleRef.current = null
+      nightRef.current = null
     }
   }, [])
 
@@ -89,28 +111,47 @@ export function MapPicker({ center, radiusKm, onPick }: Props) {
     const marker = markerRef.current
     if (!map || !marker) return
 
+    if (!center) {
+      marker.remove()
+      return
+    }
+    marker.addTo(map)
+
     const target = L.latLng(center.latitude, center.longitude)
     marker.setLatLng(target)
     if (map.distance(target, map.getCenter()) > radiusKm * 500) {
       map.panTo(target, { animate: true })
     }
-  }, [center.latitude, center.longitude, radiusKm])
+  }, [center, radiusKm])
 
   useEffect(() => {
     const map = mapRef.current
     if (!map) return
 
-    circleRef.current?.remove()
-    circleRef.current = L.circle([center.latitude, center.longitude], {
-      radius: radiusKm * 1000,
-      color: '#c2461a',
-      weight: 1.5,
-      opacity: 0.9,
-      fillColor: '#c2461a',
-      fillOpacity: 0.08,
-      interactive: false,
-    }).addTo(map)
-  }, [radiusKm, center.latitude, center.longitude])
+    if (!center) {
+      circleRef.current?.remove()
+      circleRef.current = null
+      return
+    }
+
+    const latlng = L.latLng(center.latitude, center.longitude)
+
+    if (circleRef.current) {
+      circleRef.current.setLatLng(latlng)
+      circleRef.current.setRadius(radiusKm * 1000)
+    } else {
+      circleRef.current = L.circle(latlng, {
+        radius: radiusKm * 1000,
+        color: '#10182a',
+        weight: 1.5,
+        opacity: 0.7,
+        fillColor: '#10182a',
+        fillOpacity: 0.06,
+        interactive: false,
+      }).addTo(map)
+    }
+
+  }, [radiusKm, center])
 
   return (
     <div
@@ -121,6 +162,9 @@ export function MapPicker({ center, radiusKm, onPick }: Props) {
     />
   )
 }
+
+const OPENING_VIEW: [number, number] = [39.5, -79]
+const OPENING_ZOOM = 4
 
 function zoomForSize(sizeKm: number): number {
   if (sizeKm <= 5) return 12

@@ -16,7 +16,7 @@ import type {
 } from '../api/types'
 
 export interface SceneConfig {
-  center: Observer
+  center: Observer | null
   radiusKm: number
   minSatelliteElevationDeg: number
   include: LayerSelection
@@ -50,10 +50,10 @@ const EMPTY_SCENE: LiveScene = {
   layerUpdatedAt: {},
 }
 
-function toSubscribeFrame(config: SceneConfig): SubscribeFrame {
+function toSubscribeFrame(config: SceneConfig, center: Observer): SubscribeFrame {
   return {
     action: 'subscribe',
-    center: config.center,
+    center,
     radius_km: config.radiusKm,
     min_satellite_elevation_deg: config.minSatelliteElevationDeg,
     include: config.include,
@@ -80,10 +80,15 @@ export function useLiveScene(config: SceneConfig): UseLiveSceneResult {
 
   const clientRef = useRef<LiveClient | null>(null)
 
-  const frame = useMemo(() => toSubscribeFrame(config), [config])
-  const frameKey = useMemo(() => JSON.stringify(frame), [frame])
+  const { center } = config
+  const frameKey = useMemo(
+    () => (center ? JSON.stringify(toSubscribeFrame(config, center)) : null),
+    [config, center],
+  )
 
-  const geometryKey = `${config.center.latitude},${config.center.longitude},${config.radiusKm}`
+  const geometryKey = center
+    ? `${center.latitude},${center.longitude},${config.radiusKm}`
+    : 'nowhere'
   const [lastGeometryKey, setLastGeometryKey] = useState(geometryKey)
   if (lastGeometryKey !== geometryKey) {
     setLastGeometryKey(geometryKey)
@@ -140,6 +145,10 @@ export function useLiveScene(config: SceneConfig): UseLiveSceneResult {
   }, [])
 
   useEffect(() => {
+    if (!frameKey) {
+      clientRef.current?.stop()
+      return
+    }
     clientRef.current?.setSubscription(JSON.parse(frameKey) as SubscribeFrame)
   }, [frameKey])
 

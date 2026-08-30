@@ -1,4 +1,4 @@
-const DASH = '—'
+export const DASH = '—'
 
 // english pairs only "1" with a singular, so 0, many, and the dash printed for a failed source all take the plural
 export function plural(count: number | string, one: string, many = `${one}s`): string {

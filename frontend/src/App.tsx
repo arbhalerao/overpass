@@ -5,36 +5,34 @@ import { Header } from './components/Header'
 import { ConnectionBadge } from './components/ConnectionBadge'
 import { GlyphFor } from './components/Glyphs'
 import { InfoPanel } from './components/InfoPanel'
-import { LocationPanel } from './components/LocationPanel'
+import { DEFAULT_RADIUS_KM, LocationPanel } from './components/LocationPanel'
 import { Locus } from './components/Locus'
+import { SettingsRow } from './components/SettingsRow'
 import { Clocks } from './components/Clocks'
 import { SkyDome } from './components/SkyDome'
 import { AreaView } from './components/AreaView'
-import { useInitialLocation } from './hooks/useInitialLocation'
 import { POLL_INTERVAL_MS } from './api/live'
 import { useLiveScene } from './hooks/useLiveScene'
 import type { SceneConfig } from './hooks/useLiveScene'
 import { useRafTick } from './hooks/useRafTick'
 import { useSecondTick } from './hooks/useSecondTick'
 
-const FALLBACK_CENTER: Observer = { latitude: 19.0896, longitude: 72.8656 }
-const DEFAULT_RADIUS_KM = 50
 
 const DEFAULT_MIN_SATELLITE_ELEVATION_DEG = 10
-const ALL_LAYERS: LayerSelection = { aircraft: true, satellites: true }
+const NO_LAYERS: LayerSelection = { satellites: false, aircraft: false }
 
 const AIRCRAFT_TIME_NOTE = 'Aircraft are live only.'
+const NO_PLACE_NOTE = 'Pick a location first.'
 const AIRCRAFT_REFRESH_SECONDS = 10
 const SATELLITE_REFRESH_SECONDS = 5
 
 export default function App() {
-  const [center, setCenter] = useState<Observer>(FALLBACK_CENTER)
-  const [pinnedByUser, setPinnedByUser] = useState(false)
+  const [center, setCenter] = useState<Observer | null>(null)
   const [radiusKm, setRadiusKm] = useState(DEFAULT_RADIUS_KM)
   const [minSatelliteElevationDeg, setMinSatelliteElevationDeg] = useState(
     DEFAULT_MIN_SATELLITE_ELEVATION_DEG,
   )
-  const [include, setInclude] = useState<LayerSelection>(ALL_LAYERS)
+  const [include, setInclude] = useState<LayerSelection>(NO_LAYERS)
   const [timeMode, setTimeMode] = useState<TimeMode>('live')
   const [observationTime, setObservationTime] = useState<string | null>(null)
   const [locationOpen, setLocationOpen] = useState(false)
@@ -43,10 +41,14 @@ export default function App() {
   const answered = (layer: string) =>
     scene.sources.find((source) => source.source === layer)?.status !== 'error'
 
+  const located = center !== null
   const aircraftAvailable = timeMode === 'live'
   const activeInclude = useMemo(
-    () => ({ satellites: include.satellites, aircraft: include.aircraft && aircraftAvailable }),
-    [include.satellites, include.aircraft, aircraftAvailable],
+    () => ({
+      satellites: located && include.satellites,
+      aircraft: located && include.aircraft && aircraftAvailable,
+    }),
+    [located, include.satellites, include.aircraft, aircraftAvailable],
   )
 
   const config = useMemo<SceneConfig>(
@@ -60,13 +62,6 @@ export default function App() {
     }),
     [center, radiusKm, minSatelliteElevationDeg, activeInclude, timeMode, observationTime],
   )
-
-  const { center: deviceCenter, source: locationSource } = useInitialLocation(pinnedByUser)
-  const [adoptedFix, setAdoptedFix] = useState<Observer | null>(null)
-  if (deviceCenter && deviceCenter !== adoptedFix) {
-    setAdoptedFix(deviceCenter)
-    setCenter(deviceCenter)
-  }
 
   const { scene, status, statusDetail, lastError, hasData, reconnect } = useLiveScene(config)
 
@@ -87,11 +82,20 @@ export default function App() {
   }, [])
 
   const changeLocation = useCallback((nextCenter: Observer, nextSize: number) => {
-    setPinnedByUser(true)
     setCenter(nextCenter)
     setRadiusKm(nextSize)
     setSelectedId(null)
   }, [])
+
+  const revertLocation = useCallback(
+    (nextCenter: Observer | null, nextRadius: number, nextElevation: number) => {
+      setCenter(nextCenter)
+      setRadiusKm(nextRadius)
+      setMinSatelliteElevationDeg(nextElevation)
+      setSelectedId(null)
+    },
+    [],
+  )
 
   const changeTimeMode = useCallback((mode: TimeMode, isoTime: string | null) => {
     setTimeMode(mode)
@@ -139,9 +143,12 @@ export default function App() {
               dataOk={answered('satellites')}
               minElevationDeg={minSatelliteElevationDeg}
               refreshSeconds={dataRate(SATELLITE_REFRESH_SECONDS)}
+              offReason={located ? undefined : NO_PLACE_NOTE}
             />
           </div>
-          {!hasData && <div className="stage__loading">Waiting for the first scene…</div>}
+          {activeInclude.satellites && !hasData && (
+            <div className="stage__loading">Waiting for the first scene…</div>
+          )}
         </section>
 
         <div className="rail">
@@ -152,14 +159,14 @@ export default function App() {
             timeMode={timeMode}
             onReconnect={reconnect}
           />
+          <SettingsRow waiting={!located} onOpen={openLocation} />
           <Locus
             center={center}
             radiusKm={radiusKm}
             minSatelliteElevationDeg={minSatelliteElevationDeg}
-            locationSource={locationSource}
-            onOpen={openLocation}
           />
           <Clocks
+            placed={located}
             observation={scene.observation}
             instant={instant}
             timeMode={timeMode}
@@ -169,6 +176,7 @@ export default function App() {
             scene={scene}
             include={include}
             unavailable={aircraftAvailable ? undefined : { aircraft: AIRCRAFT_TIME_NOTE }}
+            located={located}
             selectedId={selectedId}
             onSelect={setSelectedId}
             onToggle={toggleLayer}
@@ -198,7 +206,7 @@ export default function App() {
               onSelect={setSelectedId}
               enabled={activeInclude.aircraft}
               dataOk={answered('aircraft')}
-              offReason={aircraftAvailable ? undefined : AIRCRAFT_TIME_NOTE}
+              offReason={located ? (aircraftAvailable ? undefined : AIRCRAFT_TIME_NOTE) : NO_PLACE_NOTE}
               sky={scene.sky}
               refreshSeconds={dataRate(AIRCRAFT_REFRESH_SECONDS)}
             />
@@ -214,7 +222,9 @@ export default function App() {
         minSatelliteElevationDeg={minSatelliteElevationDeg}
         onClose={closeLocation}
         onChange={changeLocation}
+        onSizeChange={setRadiusKm}
         onElevationChange={setMinSatelliteElevationDeg}
+        onRevert={revertLocation}
       />
     </div>
   )
