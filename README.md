@@ -13,10 +13,10 @@ The chosen point is **permanently the centre**. The area is a circle of the radi
 
 ```
 overpass/
-├── docker-compose.yml            production stack
-├── docker-compose.override.yml   development overrides (applied automatically)
+├── docker-compose.yml                 production stack
+├── docker-compose.override.yml        development overrides (applied automatically)
 ├── .env.example
-├── backend/    FastAPI    → backend/README.md
+├── backend/    FastAPI              → backend/README.md
 └── frontend/   React + Vite         → frontend/README.md
 ```
 
