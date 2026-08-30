@@ -3,4 +3,10 @@
 .env.local
 .env.*.local
 
+# Editors and OS clutter
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
 *.log
