@@ -12,6 +12,7 @@ import { Clocks } from './components/Clocks'
 import { SkyDome } from './components/SkyDome'
 import { AreaView } from './components/AreaView'
 import { POLL_INTERVAL_MS } from './api/live'
+import { isInArea, isTracked } from './lib/geo'
 import { useLiveScene } from './hooks/useLiveScene'
 import type { SceneConfig } from './hooks/useLiveScene'
 import { useRafTick } from './hooks/useRafTick'
@@ -76,6 +77,16 @@ export default function App() {
 
   const tickEnabled = include.aircraft && scene.aircraft.length > 0 && timeMode === 'live'
   const now = useRafTick(20, tickEnabled)
+
+  const observation = scene.observation
+  const flying = scene.aircraft.filter(
+    (item) =>
+      !item.on_ground &&
+      isTracked(item, now) &&
+      (!observation || isInArea(item, observation, now)),
+  )
+  const shown =
+    flying.length === scene.aircraft.length ? scene : { ...scene, aircraft: flying }
 
   const toggleLayer = useCallback((layer: LayerName) => {
     setInclude((previous) => ({ ...previous, [layer]: !previous[layer] }))
@@ -173,7 +184,7 @@ export default function App() {
             onChange={changeTimeMode}
           />
           <InfoPanel
-            scene={scene}
+            scene={shown}
             include={include}
             unavailable={aircraftAvailable ? undefined : { aircraft: AIRCRAFT_TIME_NOTE }}
             located={located}
@@ -199,7 +210,7 @@ export default function App() {
           </div>
           <div className="viz-frame">
             <AreaView
-              aircraft={scene.aircraft}
+              aircraft={shown.aircraft}
               observation={scene.observation}
               now={now}
               selectedId={selectedId}

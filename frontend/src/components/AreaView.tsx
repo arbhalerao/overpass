@@ -1,23 +1,22 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useMemo, useState } from 'react'
 
 import type { Aircraft, ObservationContext, SkyConditions } from '../api/types'
 import { formatDegrees, formatKm, formatMetres, formatSpeed, plural } from '../lib/format'
 import { brandColor } from '../data/airlineBrands'
-import { clampTooltipPercent, compassPoint, projectAircraft } from '../lib/geo'
+import { clampTooltipPercent, compassPoint, holdInside, projectAircraft, rayToRim } from '../lib/geo'
 import type { Projected } from '../lib/geo'
-import { AIRCRAFT_DRAWN_AT, GLYPH, glyphStroke, glyphTransform } from '../lib/glyphs'
+import { AIRCRAFT_DRAWN_AT, GLYPH, glyphRadius, glyphStroke, glyphTransform } from '../lib/glyphs'
 import { GlyphSwatch } from './Glyphs'
 import { SKY_GRADIENT, TYPE_MARK } from '../lib/palette'
 import { RadarDial } from './RadarDial'
 
 const HALF = 100
 const VIEW = 115
-const TRAIL_LENGTH = 20
-const TRAIL_SAMPLE_MS = 1000
 const LEAD_SECONDS = 60
 const LABEL_DENSITY_LIMIT = 28
 
 const MARK_SCALE = 0.62
+const MARK_LIMIT = HALF - glyphRadius('aircraft', MARK_SCALE)
 
 interface Props {
   aircraft: Aircraft[]
@@ -53,25 +52,19 @@ export function AreaView({
 }: Props) {
   const [hoveredId, setHoveredId] = useState<string | null>(null)
 
-  const airlineCount = useMemo(
-    () => new Set(aircraft.map((item) => item.airline?.icao).filter(Boolean)).size,
-    [aircraft],
-  )
-
   const placed = useMemo<Placed[]>(() => {
     if (!observation) return []
     return aircraft.map((item) => {
       const projected = projectAircraft(item, observation, now)
-      return {
-        aircraft: item,
-        projected,
-        x: projected.x * HALF,
-        y: -projected.y * HALF,
-      }
+      const point = holdInside(projected.x * HALF, -projected.y * HALF, MARK_LIMIT)
+      return { aircraft: item, projected, x: point.x, y: point.y }
     })
   }, [aircraft, observation, now])
 
-  const trails = useTrails(placed, now)
+  const airlineCount = useMemo(
+    () => new Set(placed.map((item) => item.aircraft.airline?.icao).filter(Boolean)).size,
+    [placed],
+  )
 
   const active =
     placed.find((item) => item.aircraft.id === hoveredId) ??
@@ -98,12 +91,9 @@ export function AreaView({
           sweepSeconds={enabled && refreshSeconds !== null ? refreshSeconds : undefined}
           sweep="rotate"
           sweepColor={TYPE_MARK.aircraft}
-          ariaLabel={`Aircraft radar, plan view: ${aircraft.length} within ${plural(radiusKm, 'kilometre')}`}
+          ariaLabel={`Aircraft radar, plan view: ${placed.length} within ${plural(radiusKm, 'kilometre')}`}
           onPointerLeave={() => setHoveredId(null)}
         >
-          {placed.map((item) => (
-            <Trail key={`trail-${item.aircraft.id}`} points={trails.get(item.aircraft.id) ?? []} />
-          ))}
           {placed.map((item) => (
             <AircraftMark
               key={item.aircraft.id}
@@ -161,7 +151,7 @@ export function AreaView({
             <div className="legend legend--counted">
               <span className="legend__item">
                 <GlyphSwatch type="aircraft" />
-                <strong>{dataOk ? aircraft.length : '—'}</strong> within {radiusKm} km
+                <strong>{dataOk ? placed.length : '—'}</strong> within {radiusKm} km
               </span>
               <span className="legend__item">
                 <GlyphSwatch type="aircraft" faded />
@@ -171,8 +161,8 @@ export function AreaView({
             </div>
             {!dataOk ? (
               <p className="dial__note dial__note--fault">Couldn't reach the aircraft feed.</p>
-            ) : aircraft.length === 0 ? (
-              <p className="dial__note">Nothing within {radiusKm} km of here right now.</p>
+            ) : placed.length === 0 ? (
+              <p className="dial__note">Nothing flying within {radiusKm} km of here right now.</p>
             ) : (
               <p className="dial__note">
                 Nose points along the true track; the dashed lead reaches where it will be
@@ -209,14 +199,19 @@ function AircraftMark({
   const heading = aircraft.heading_deg ?? 0
   const label = aircraft.flight_number ?? aircraft.callsign ?? aircraft.icao24.toUpperCase()
 
-  const leadFraction =
+  const along = {
+    x: Math.sin((heading * Math.PI) / 180),
+    y: -Math.cos((heading * Math.PI) / 180),
+  }
+  const lead =
     radiusKm > 0 && aircraft.velocity_mps
       ? ((aircraft.velocity_mps * LEAD_SECONDS) / 1000 / radiusKm) * HALF
       : 0
+  //  the lead reaches past the rim for anything fast near the edge: stop it there
+  const leadFraction = Math.min(lead, rayToRim({ x, y }, along, HALF))
 
   const classes = [
     'aircraft',
-    aircraft.on_ground ? 'aircraft--ground' : '',
     projected.stale ? 'aircraft--stale' : '',
     selected ? 'is-selected' : '',
   ]
@@ -242,33 +237,23 @@ function AircraftMark({
       <circle r={11} className="aircraft__hit" />
       {selected && <circle r={13} className="aircraft__ring" />}
 
-      {!aircraft.on_ground && leadFraction > 1 && (
+      {leadFraction > 1 && (
         <line
           className="aircraft__vector"
           x1={0}
           y1={0}
-          x2={Math.sin((heading * Math.PI) / 180) * leadFraction}
-          y2={-Math.cos((heading * Math.PI) / 180) * leadFraction}
+          x2={along.x * leadFraction}
+          y2={along.y * leadFraction}
         />
       )}
 
 
-      {aircraft.on_ground ? (
-        <rect
-          x={-3}
-          y={-3}
-          width={6}
-          height={6}
-          className="aircraft__ground-glyph"
-        />
-      ) : (
-        <path
-          className="aircraft__glyph"
-          d={GLYPH.aircraft.d}
-          transform={glyphTransform('aircraft', MARK_SCALE, heading - AIRCRAFT_DRAWN_AT)}
-          strokeWidth={glyphStroke('aircraft', MARK_SCALE, GLYPH.aircraft.weight)}
-        />
-      )}
+      <path
+        className="aircraft__glyph"
+        d={GLYPH.aircraft.d}
+        transform={glyphTransform('aircraft', MARK_SCALE, heading - AIRCRAFT_DRAWN_AT)}
+        strokeWidth={glyphStroke('aircraft', MARK_SCALE, GLYPH.aircraft.weight)}
+      />
 
       {(showLabel || selected) && (
         <text className="aircraft__label" x={x > 0 ? -7 : 7} y={-6} textAnchor={x > 0 ? 'end' : 'start'}>
@@ -283,42 +268,4 @@ function formatRing(km: number): string {
   if (km >= 5) return `${Math.round(km)} km`
   if (km >= 1) return `${km.toFixed(1)} km`
   return `${Math.round(km * 1000)} m`
-}
-
-function Trail({ points }: { points: Array<{ x: number; y: number }> }) {
-  if (points.length < 2) return null
-  return (
-    <polyline
-      className="aircraft__trail"
-      points={points.map((point) => `${point.x},${point.y}`).join(' ')}
-    />
-  )
-}
-
-
-type TrailMap = Map<string, Array<{ x: number; y: number }>>
-
-const NO_TRAILS: TrailMap = new Map()
-
-function useTrails(placed: Placed[], now: number): TrailMap {
-  const [trails, setTrails] = useState<TrailMap>(NO_TRAILS)
-  const lastSampleRef = useRef(0)
-
-  useEffect(() => {
-    if (now - lastSampleRef.current < TRAIL_SAMPLE_MS) return
-    lastSampleRef.current = now
-
-    setTrails((previous) => {
-      const next: TrailMap = new Map()
-      for (const item of placed) {
-        const points = previous.get(item.aircraft.id) ?? []
-        const grown = [...points, { x: item.x, y: item.y }]
-        next.set(item.aircraft.id, grown.slice(-TRAIL_LENGTH))
-      }
-      // aircraft that left the area drop out: absent keys are simply not copied
-      return next
-    })
-  }, [placed, now])
-
-  return trails
 }

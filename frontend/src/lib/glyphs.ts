@@ -13,6 +13,7 @@ interface Glyph {
   fill: number
   strokeUnit: number
   weight: number
+  reach: number
 }
 
 export const GLYPH: Record<ObjectType, Glyph> = {
@@ -22,6 +23,7 @@ export const GLYPH: Record<ObjectType, Glyph> = {
     fill: 0.85,
     strokeUnit: 25.6,
     weight: 0.6,
+    reach: 11.6,
   },
   satellite: {
     d: SATELLITE_D,
@@ -29,6 +31,7 @@ export const GLYPH: Record<ObjectType, Glyph> = {
     fill: 1.25,
     strokeUnit: 1.2,
     weight: 0.55,
+    reach: 11.0,
   },
 }
 
@@ -40,6 +43,10 @@ export function glyphTransform(
 ): string {
   const spin = rotateDeg ? `rotate(${rotateDeg}) ` : ''
   return `${spin}scale(${GLYPH[type].fill * scale}) ${GLYPH[type].fit}`.trim()
+}
+
+export function glyphRadius(type: ObjectType, scale = 1): number {
+  return GLYPH[type].reach * scale
 }
 
 // Stroke widths are scaled by the transform, so express them in source units.

@@ -3,17 +3,19 @@ import type { Aircraft, ObservationContext } from '../api/types'
 const METRES_PER_DEGREE_LATITUDE = 111_320
 
 export const STALE_AFTER_MS = 120_000
+export const DROP_AFTER_MS = STALE_AFTER_MS * 2
 
 export interface Projected {
   latitude: number
   longitude: number
   azimuth: number
   elevation: number
-  //  -1 west edge .. 0 centre .. +1 east edge
+  //  -1 west edge .. 0 centre .. +1 east edge, and past that once dead reckoning carries an aircraft out of the area
   x: number
-  //  -1 south edge .. 0 centre .. +1 north edge
+  //  -1 south edge .. 0 centre .. +1 north edge, likewise
   y: number
-  ageSeconds: number
+  //  null when the feed gives no position timestamp: the fix is of unknown age
+  ageSeconds: number | null
   stale: boolean
 }
 
@@ -46,16 +48,54 @@ export function toNormalized(
   }
 }
 
+export function holdInside(x: number, y: number, limit: number): { x: number; y: number } {
+  const radius = Math.hypot(x, y)
+  if (radius <= limit || radius === 0) return { x, y }
+  return { x: (x / radius) * limit, y: (y / radius) * limit }
+}
+
+export function rayToRim(
+  from: { x: number; y: number },
+  along: { x: number; y: number },
+  radius: number,
+): number {
+  const projection = from.x * along.x + from.y * along.y
+  const gap = radius * radius - (from.x * from.x + from.y * from.y)
+  return -projection + Math.sqrt(Math.max(0, projection * projection + gap))
+}
+
+function timestampAgeMs(stamp: string | null, atMs: number): number | null {
+  if (!stamp) return null
+  const ms = Date.parse(stamp)
+  return Number.isFinite(ms) ? Math.max(0, atMs - ms) : null
+}
+
+//  how long ago the feed last decoded a position, which it may never say
+export function fixAgeMs(aircraft: Aircraft, atMs: number): number | null {
+  return timestampAgeMs(aircraft.position_time, atMs)
+}
+
+//  how long ago anything at all was heard from the transponder
+export function contactAgeMs(aircraft: Aircraft, atMs: number): number | null {
+  return timestampAgeMs(aircraft.last_contact, atMs)
+}
+
+//  a position of unknown age still comes from an aircraft that is out there
+//  keep it while the transponder is being heard, and give up on it after that
+export function isTracked(aircraft: Aircraft, atMs: number): boolean {
+  const age = fixAgeMs(aircraft, atMs) ?? contactAgeMs(aircraft, atMs)
+  return age !== null && age <= DROP_AFTER_MS
+}
+
 //  dead-reckon an aircraft forward from its last fix
 export function projectAircraft(
   aircraft: Aircraft,
   observation: ObservationContext,
   atMs: number,
 ): Projected {
-  const fixMs = aircraft.position_time ? Date.parse(aircraft.position_time) : Number.NaN
-  const ageMs = Number.isFinite(fixMs) ? Math.max(0, atMs - fixMs) : 0
-  const ageSeconds = ageMs / 1000
-  const stale = ageMs > STALE_AFTER_MS
+  const ageMs = fixAgeMs(aircraft, atMs)
+  const ageSeconds = ageMs === null ? null : ageMs / 1000
+  const stale = ageMs === null || ageMs > STALE_AFTER_MS
 
   const speed = aircraft.velocity_mps ?? 0
   const heading = aircraft.heading_deg ?? 0
@@ -73,7 +113,7 @@ export function projectAircraft(
     }
   }
 
-  const distance = speed * ageSeconds
+  const distance = speed * (ageSeconds ?? 0)
   const bearing = (heading * Math.PI) / 180
   const north = distance * Math.cos(bearing)
   const east = distance * Math.sin(bearing)
@@ -98,6 +138,15 @@ export function projectAircraft(
     ageSeconds,
     stale,
   }
+}
+
+export function isInArea(
+  aircraft: Aircraft,
+  observation: ObservationContext,
+  atMs: number,
+): boolean {
+  const { x, y } = projectAircraft(aircraft, observation, atMs)
+  return Math.hypot(x, y) <= 1
 }
 
 const EARTH_RADIUS_M = 6_371_008.8

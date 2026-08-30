@@ -2,10 +2,10 @@ import { useMemo, useState } from 'react'
 
 import type { Satellite, SkyConditions } from '../api/types'
 import { formatDegrees, formatKm, plural } from '../lib/format'
-import { clampTooltipPercent, compassPoint, skyToDome } from '../lib/geo'
+import { clampTooltipPercent, compassPoint, holdInside, skyToDome } from '../lib/geo'
 import { SKY_CONDITION_NOTE, SKY_GRADIENT, TYPE_MARK } from '../lib/palette'
 import { GlyphSwatch } from './Glyphs'
-import { FADED_OPACITY, glyphPaint } from '../lib/glyphs'
+import { FADED_OPACITY, glyphPaint, glyphRadius } from '../lib/glyphs'
 import { RadarDial } from './RadarDial'
 
 const R = 100
@@ -14,6 +14,14 @@ const VIEW = 115
 const LABEL_DENSITY_LIMIT = 10
 
 const MARK_SCALE = 0.66
+//  as on the plan view: the whole glyph stays on the dial, so a satellite near the
+//  floor sits inside the rim rather than across it
+const MARK_LIMIT = R - glyphRadius('satellite', MARK_SCALE)
+
+function domePoint(azimuthDeg: number, elevationDeg: number, floorDeg: number) {
+  const point = skyToDome(azimuthDeg, elevationDeg, R, floorDeg)
+  return holdInside(point.x, point.y, MARK_LIMIT)
+}
 
 
 function elevationRings(floorDeg: number): Array<{ fraction: number; label: string }> {
@@ -67,7 +75,7 @@ export function SkyDome({
     satellites.find((satellite) => satellite.id === hoveredId) ??
     satellites.find((satellite) => satellite.id === selectedId) ??
     null
-  const activePoint = active ? skyToDome(active.azimuth_deg, active.elevation_deg, R, minElevationDeg) : null
+  const activePoint = active ? domePoint(active.azimuth_deg, active.elevation_deg, minElevationDeg) : null
 
   return (
     <div className={`dial${enabled ? '' : ' is-off'}`}>
@@ -166,7 +174,7 @@ function SatelliteMark({
   onHover,
   onSelect,
 }: MarkProps) {
-  const { x, y } = skyToDome(satellite.azimuth_deg, satellite.elevation_deg, R, floorDeg)
+  const { x, y } = domePoint(satellite.azimuth_deg, satellite.elevation_deg, floorDeg)
   const visible = satellite.is_visible === true
 
   return (
