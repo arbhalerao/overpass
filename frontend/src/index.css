@@ -80,3 +80,642 @@ button {
   outline-offset: 2px;
   border-radius: 4px;
 }
+
+/* layout */
+
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+}
+
+.stage {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(296px, 336px);
+  gap: 14px;
+  padding: 14px;
+  align-items: stretch;
+}
+
+.stage__sky,
+.stage__area {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: var(--surface);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius);
+  padding: 14px;
+}
+
+.viz-frame {
+  flex: 1;
+  min-height: 0;
+  container-type: size;
+  display: grid;
+  place-items: center;
+}
+
+.stage__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+  min-height: 58px;
+}
+
+.stage__caption {
+  flex: 1;
+  min-width: 0;
+}
+
+.stage__head .layer {
+  flex: none;
+  margin-top: -2px;
+}
+
+.stage__caption h2 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.stage__caption p {
+  margin-top: 3px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.stage__loading {
+  position: absolute;
+  inset: auto 0 14px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+@media (max-width: 1180px) {
+  .app {
+    height: auto;
+    overflow: visible;
+  }
+
+  .stage {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .viz-frame {
+    container-type: inline-size;
+  }
+
+  .dial__scope {
+    width: 100%;
+  }
+
+  .info {
+    grid-column: 1 / -1;
+    overflow: visible;
+  }
+}
+
+@media (max-width: 780px) {
+  .stage {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 10px;
+  }
+
+  .info {
+    grid-column: auto;
+  }
+}
+
+/* header */
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  padding: 10px 14px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.header__brand {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.header__mark {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 32% 32%, #f0a24a, var(--aircraft) 70%);
+  box-shadow: 0 0 10px rgb(194 70 26 / 35%);
+}
+
+.header__word {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+}
+
+.header__word em {
+  font-style: normal;
+  color: var(--text-muted);
+}
+
+.locus {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+  padding: 5px 11px;
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  text-align: left;
+  transition: border-color 120ms, background 120ms;
+}
+
+.locus:hover {
+  background: var(--surface-hover);
+  border-color: var(--aircraft);
+}
+
+.locus__coords {
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+
+.locus__size {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.switch {
+  padding: 3px;
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius-sm);
+}
+
+.switch__track {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 52px;
+  height: 24px;
+  padding: 0 7px;
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  box-shadow: inset 0 1px 2px rgb(16 24 42 / 12%);
+  transition: background 140ms, border-color 140ms;
+}
+
+.switch__state {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  transition: color 140ms;
+}
+
+.switch__knob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  box-shadow: 0 1px 2px rgb(16 24 42 / 20%);
+  transition: transform 140ms, background 140ms, border-color 140ms;
+}
+
+.switch:hover:not(:disabled) .switch__track {
+  border-color: var(--text-muted);
+}
+
+.switch:disabled {
+  cursor: not-allowed;
+}
+
+.switch:disabled .switch__track {
+  opacity: 0.5;
+  border-style: dashed;
+}
+
+.switch:disabled .switch__knob {
+  box-shadow: none;
+}
+
+.switch.is-on .switch__track {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+.switch.is-on .switch__state {
+  margin-left: 0;
+  margin-right: auto;
+  color: var(--accent);
+}
+
+.switch.is-on .switch__knob {
+  transform: translateX(28px);
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+  .switch__knob,
+  .switch__track,
+  .switch__state {
+    transition: none;
+  }
+}
+
+.dial.is-off .dial__scope {
+  filter: grayscale(1);
+  opacity: 0.45;
+}
+
+.conn {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 11px;
+  background: var(--surface-raised);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+}
+
+.conn:hover {
+  border-color: var(--border);
+}
+
+.conn__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex: 0 0 7px;
+}
+
+.conn__dot.is-pulsing {
+  animation: pulse 2.4s ease-in-out infinite;
+}
+
+@keyframes pulse {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.35;
+  }
+}
+
+.conn__label {
+  color: var(--text-secondary);
+}
+
+.banner {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 8px 14px;
+  font-size: 12px;
+  background: color-mix(in srgb, var(--critical) 16%, var(--surface));
+  border-bottom: 1px solid color-mix(in srgb, var(--critical) 40%, transparent);
+}
+
+.banner strong {
+  font-family: var(--font-mono);
+  color: var(--critical);
+}
+
+.banner span {
+  color: var(--text-secondary);
+}
+
+/* sky dome */
+
+/* --- The dial: a strictly square scope, with its footer below --- */
+
+.dial {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+}
+
+.dial__scope {
+  position: relative;
+  aspect-ratio: 1;
+  width: min(100cqw, calc(100cqh - var(--dial-footer-h)));
+}
+
+.dial__scope>svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.dial__footer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  min-height: var(--dial-footer-h);
+  width: 100%;
+}
+
+/* --- Radar chrome, shared by both dials --- */
+
+.radar__grid circle {
+  fill: none;
+  stroke: rgb(16 24 42 / 11%);
+  stroke-width: 0.5;
+}
+
+.radar__grid line {
+  stroke: rgb(16 24 42 / 8%);
+  stroke-width: 0.5;
+}
+
+.radar__rim {
+  fill: none;
+  stroke: rgb(16 24 42 / 30%);
+  stroke-width: 1;
+}
+
+.radar__ticks line {
+  stroke: rgb(16 24 42 / 22%);
+  stroke-width: 0.5;
+}
+
+.radar__ticks line.is-major {
+  stroke: rgb(16 24 42 / 38%);
+  stroke-width: 0.8;
+}
+
+.radar__ring-labels text {
+  fill: var(--text-muted);
+  font-size: 5.5px;
+  font-family: var(--font-mono);
+  paint-order: stroke;
+  stroke: #ffffff;
+  stroke-width: 1.6;
+  stroke-linejoin: round;
+}
+
+.radar__compass text {
+  fill: var(--text-secondary);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-anchor: middle;
+  dominant-baseline: middle;
+}
+
+.radar__origin line {
+  stroke: var(--text-secondary);
+  stroke-width: 0.8;
+}
+
+.radar__origin circle {
+  fill: none;
+  stroke: var(--text-secondary);
+  stroke-width: 0.8;
+}
+
+.radar__sweep {
+  transform-origin: 0 0;
+  animation-name: radar-sweep;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  pointer-events: none;
+}
+
+.radar__sweep-edge {
+  stroke-width: 0.7;
+  opacity: 0.22;
+}
+
+@keyframes radar-sweep {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .radar__sweep {
+    display: none;
+  }
+}
+
+.mark {
+  cursor: pointer;
+}
+
+.mark__hit {
+  fill: transparent;
+}
+
+.mark__ring {
+  fill: none;
+  stroke: var(--text-primary);
+  stroke-width: 1.2;
+  opacity: 0.8;
+}
+
+.mark__label {
+  fill: var(--text-secondary);
+  font-size: 5.5px;
+  paint-order: stroke;
+  stroke: #ffffff;
+  stroke-width: 1.8;
+  stroke-linejoin: round;
+  pointer-events: none;
+}
+
+.mark:hover .mark__label {
+  fill: var(--text-primary);
+}
+
+.mark--satellite .mark__label {
+  fill: var(--satellite);
+}
+
+.mark--satellite:not(.is-visible) .mark__label {
+  fill: var(--text-muted);
+}
+
+.dial__tooltip {
+  position: absolute;
+  transform: translate(-50%, calc(-100% - 14px));
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 130px;
+  padding: 7px 10px;
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow);
+  pointer-events: none;
+  white-space: nowrap;
+  z-index: 4;
+}
+
+.dial__tooltip-name {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.dial__tooltip-row {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.dial__tooltip-row--muted {
+  color: var(--text-muted);
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px 16px;
+  margin-top: 10px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.legend__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.legend--counted {
+  gap: 8px 20px;
+  font-size: 11.5px;
+}
+
+.legend--counted strong {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.legend__item svg {
+  flex: none;
+  display: block;
+}
+
+.dial__note {
+  font-size: 11.5px;
+  line-height: 1.45;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.dial__note--fault {
+  color: var(--warning);
+}
+
+/* the area dial */
+
+.aircraft {
+  cursor: pointer;
+}
+
+.aircraft__hit {
+  fill: transparent;
+}
+
+.aircraft__glyph {
+  fill: var(--aircraft-mark);
+}
+
+.aircraft__ground-glyph {
+  fill: none;
+  stroke: var(--aircraft-mark);
+  stroke-width: 1.2;
+  opacity: 0.75;
+}
+
+.aircraft__vector {
+  stroke: var(--aircraft-mark);
+  stroke-width: 0.7;
+  opacity: 0.4;
+  stroke-dasharray: 2 2.5;
+}
+
+.aircraft__trail {
+  fill: none;
+  stroke: var(--aircraft-mark);
+  stroke-width: 0.9;
+  opacity: 0.3;
+  stroke-linecap: round;
+}
+
+.aircraft__ring {
+  fill: none;
+  stroke: var(--text-primary);
+  stroke-width: 1;
+}
+
+.aircraft__label {
+  fill: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: 5.5px;
+  paint-order: stroke;
+  stroke: #ffffff;
+  stroke-width: 2;
+  stroke-linejoin: round;
+  pointer-events: none;
+}
+
+.aircraft:hover .aircraft__label {
+  fill: var(--text-primary);
+}
+
+.aircraft--ground {
+  opacity: 0.7;
+}
+
+.aircraft--stale .aircraft__glyph {
+  opacity: 0.45;
+}
