@@ -719,3 +719,758 @@ button {
 .aircraft--stale .aircraft__glyph {
   opacity: 0.45;
 }
+
+/* info rail */
+
+.rail {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+.info {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.counts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.tile__note {
+  font-size: 10.5px;
+  color: var(--satellite);
+}
+
+.tile {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 10px 11px;
+  background: var(--surface);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-sm);
+}
+
+.tile.is-off {
+  opacity: 0.45;
+}
+
+.tile__head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-muted);
+}
+
+.tile__label {
+  font-size: 10.5px;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.tile__value {
+  font-family: var(--font-mono);
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 1;
+  color: var(--text-primary);
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 13px;
+  background: var(--surface);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius);
+}
+
+.card--empty {
+  color: var(--text-muted);
+  font-size: 12.5px;
+}
+
+.card__head {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+}
+
+.card__head--plain {
+  justify-content: space-between;
+  align-items: center;
+}
+
+.card__head h3 {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.card__head p {
+  font-size: 11.5px;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+}
+
+.card__note {
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--text-muted);
+  padding-top: 8px;
+  border-top: 1px solid var(--border-soft);
+}
+
+.card__clear {
+  align-self: flex-start;
+}
+
+.rows {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.row__label {
+  font-size: 11.5px;
+  color: var(--text-muted);
+}
+
+.row__value {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-primary);
+  text-align: right;
+}
+
+.badge {
+  padding: 2px 8px;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  border-radius: 3px;
+}
+
+.badge--warn {
+  color: var(--warning);
+  background: color-mix(in srgb, var(--warning) 16%, transparent);
+}
+
+.card__accent {
+  width: 4px;
+  height: 30px;
+  border-radius: 2px;
+  flex: none;
+  margin-top: 1px;
+}
+
+.dial__tooltip-row--airline {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.airline__swatch {
+  width: 9px;
+  height: 9px;
+  border-radius: 2px;
+  flex: none;
+}
+
+.sources {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.source.is-off .source__name {
+  color: var(--text-muted);
+}
+
+.source {
+  display: grid;
+  grid-template-columns: 14px 1fr auto auto;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.source__icon {
+  font-size: 10px;
+  text-align: center;
+}
+
+.source__name {
+  color: var(--text-secondary);
+}
+
+.source__state {
+  font-size: 11px;
+}
+
+.source__count {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--text-muted);
+}
+
+.source__message {
+  grid-column: 2 / -1;
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--text-muted);
+}
+
+.warnings {
+  margin: 0;
+  padding: 9px 0 0 16px;
+  border-top: 1px solid var(--border-soft);
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--warning);
+}
+
+/* location panel */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 32px 16px;
+  overflow-y: auto;
+  background: rgb(16 24 42 / 38%);
+  backdrop-filter: blur(3px);
+}
+
+.panel {
+  width: min(620px, 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  padding: 18px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: var(--shadow-lg);
+}
+
+.panel__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.panel__head p {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.panel__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.panel__hint {
+  font-size: 11.5px;
+  color: var(--text-muted);
+  margin-top: -6px;
+}
+
+.map-picker {
+  height: 280px;
+  border-radius: var(--radius);
+  overflow: hidden;
+  border: 1px solid var(--border);
+  background: var(--surface-sunk);
+}
+
+.map-pin {
+  position: relative;
+}
+
+.map-pin__dot {
+  position: absolute;
+  inset: 4px;
+  border-radius: 50%;
+  background: var(--aircraft-mark);
+  border: 2px solid #fff;
+  box-shadow: 0 0 8px rgb(0 0 0 / 60%);
+}
+
+.map-pin__pulse {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 1.5px solid var(--aircraft-mark);
+  opacity: 0.55;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.field label,
+.field__label {
+  font-size: 11.5px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.field label strong {
+  color: var(--text-primary);
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.field input[type='text'],
+.field input:not([type]) {
+  padding: 8px 10px;
+}
+
+.field input:not([type='range']) {
+  padding: 8px 10px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--text-primary);
+  background: var(--surface-sunk);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.field input[type='range'] {
+  width: 100%;
+  padding: 0;
+  background: transparent;
+  border: 0;
+}
+
+.field__hint {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.chip {
+  padding: 4px 11px;
+  font-size: 11.5px;
+  background: var(--surface-raised);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-sm);
+}
+
+.chip:hover {
+  border-color: var(--border);
+  color: var(--text-primary);
+}
+
+.chip.is-active {
+  color: var(--text-primary);
+  border-color: var(--aircraft-mark);
+  background: color-mix(in srgb, var(--aircraft-mark) 18%, transparent);
+}
+
+.presets {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 7px;
+}
+
+@media (max-width: 560px) {
+  .presets {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.preset {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 8px 11px;
+  text-align: left;
+  background: var(--surface-raised);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-sm);
+  transition: border-color 120ms, background 120ms;
+}
+
+.preset:hover {
+  border-color: var(--aircraft);
+  background: var(--surface-hover);
+}
+
+.preset strong {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.preset span {
+  font-size: 11px;
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.preset--locate {
+  border-style: dashed;
+}
+
+.preset--locate:hover:not(:disabled) {
+  border-style: solid;
+}
+
+.preset--locate:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.preset--locate strong {
+  color: var(--aircraft);
+}
+
+.panel__foot {
+  display: flex;
+  justify-content: center;
+}
+
+.button {
+  padding: 6px 13px;
+  font-size: 12.5px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--surface-raised);
+  color: var(--text-secondary);
+  transition: border-color 120ms, color 120ms, background 120ms;
+}
+
+.button:hover {
+  color: var(--text-primary);
+  border-color: var(--aircraft);
+  background: var(--surface-hover);
+}
+
+.button:focus-visible {
+  outline: 2px solid var(--aircraft);
+  outline-offset: 2px;
+}
+
+.button--ghost {
+  background: transparent;
+}
+
+.button--primary {
+  background: var(--aircraft);
+  border-color: var(--aircraft);
+  color: #fff;
+  padding: 8px 22px;
+  font-weight: 600;
+}
+
+.button--primary:hover {
+  color: #fff;
+  background: color-mix(in srgb, var(--aircraft) 88%, #000);
+  border-color: color-mix(in srgb, var(--aircraft) 88%, #000);
+}
+
+.leaflet-container {
+  background: var(--surface-sunk);
+  font-family: var(--font-sans);
+}
+
+.leaflet-control-attribution {
+  background: rgb(255 255 255 / 86%) !important;
+  color: var(--text-muted) !important;
+  font-size: 10px !important;
+}
+
+.leaflet-control-attribution a {
+  color: var(--text-secondary) !important;
+}
+
+.leaflet-bar a {
+  background: var(--surface-raised) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border) !important;
+}
+
+.leaflet-bar a:hover {
+  background: var(--surface-hover) !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* clocks: one instant, three faces */
+
+.clocks {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  gap: 7px;
+}
+
+.clocks__away {
+  display: flex;
+  align-items: center;
+  padding: 0 9px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  color: var(--warning);
+  background: color-mix(in srgb, var(--warning) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--warning) 45%, transparent);
+  border-radius: var(--radius-sm);
+}
+
+.clocks__faces.is-fixed {
+  border-color: color-mix(in srgb, var(--warning) 55%, transparent);
+}
+
+.clocks__faces {
+  display: flex;
+  align-items: stretch;
+  gap: 1px;
+  background: var(--border-soft);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.clock {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+  padding: 5px 11px;
+  background: var(--surface);
+  border: 0;
+  text-align: left;
+  transition: background 120ms;
+}
+
+.clock:hover {
+  background: var(--surface-hover);
+}
+
+.clock.is-open {
+  background: var(--surface-hover);
+}
+
+.clock:focus-visible {
+  outline: 2px solid var(--aircraft);
+  outline-offset: -2px;
+}
+
+.clock__label {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.clock__label em {
+  font-style: normal;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+  opacity: 0.75;
+}
+
+.clock__time {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+  color: var(--text-primary);
+}
+
+.clock__date {
+  font-size: 9.5px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+/* --- The shared picker --- */
+
+.timepop {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+  width: 272px;
+  padding: 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+}
+
+.timepop__head {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.timepop__head>span:first-child {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.timepop__zone {
+  font-size: 11.5px;
+  color: var(--text-muted);
+}
+
+.timepop__input {
+  width: 100%;
+  padding: 9px 11px;
+  font-family: var(--font-mono);
+  font-size: 13.5px;
+  color: var(--text-primary);
+  background: var(--surface-sunk);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.timepop__input:focus-visible {
+  outline: 2px solid var(--aircraft);
+  outline-offset: 1px;
+}
+
+.timepop__input::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 0.55;
+}
+
+.timepop__input::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+}
+
+.timepop__jumps {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 4px;
+}
+
+.timepop__jumps button {
+  padding: 6px 0;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-secondary);
+  background: var(--surface-raised);
+  border: 1px solid var(--border-soft);
+  border-radius: 5px;
+  transition: border-color 120ms, color 120ms;
+}
+
+.timepop__jumps button:hover {
+  border-color: var(--aircraft);
+  color: var(--text-primary);
+}
+
+.timepop__jumps button:focus-visible {
+  outline: 2px solid var(--aircraft);
+  outline-offset: 1px;
+}
+
+.timepop__foot {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.timepop__live,
+.timepop__done {
+  padding: 6px 12px;
+  font-size: 12.5px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-secondary);
+  transition: border-color 120ms, color 120ms, background 120ms;
+}
+
+.timepop__live:hover,
+.timepop__done:hover {
+  color: var(--text-primary);
+  border-color: var(--aircraft);
+}
+
+.timepop__live.is-active {
+  color: var(--satellite);
+  border-color: var(--satellite);
+  cursor: default;
+}
+
+.timepop__done {
+  background: var(--surface-raised);
+}
+
+@media (max-width: 780px) {
+
+  .locus {
+    margin-left: 0;
+  }
+
+  .clock__date {
+    display: none;
+  }
+}
