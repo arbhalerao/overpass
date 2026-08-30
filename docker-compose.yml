@@ -1,0 +1,73 @@
+name: overpass
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: overpass-backend
+    restart: unless-stopped
+    environment:
+      APP_NAME: ${APP_NAME:-Overpass}
+      APP_ENV: ${APP_ENV:-production}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      LOG_FORMAT: ${LOG_FORMAT:-json}
+
+      # Optional. Without these the aircraft layer falls back to OpenSky's small anonymous quota; everything else works regardless.
+      OPENSKY_CLIENT_ID: ${OPENSKY_CLIENT_ID:-}
+      OPENSKY_CLIENT_SECRET: ${OPENSKY_CLIENT_SECRET:-}
+      # Overridable so the provider can be pointed at a stand-in for testing.
+      OPENSKY_BASE_URL: ${OPENSKY_BASE_URL:-https://opensky-network.org/api}
+
+      CELESTRAK_GROUPS: ${CELESTRAK_GROUPS:-stations,visual}
+      CELESTRAK_NAMES: ${CELESTRAK_NAMES:-}
+      SATELLITE_CACHE_TTL_SECONDS: ${SATELLITE_CACHE_TTL_SECONDS:-7200}
+      AIRCRAFT_CACHE_TTL_SECONDS: ${AIRCRAFT_CACHE_TTL_SECONDS:-5}
+
+      ASTRONOMY_DATA_DIR: /app/data
+      SKYFIELD_ALLOW_DOWNLOADS: ${SKYFIELD_ALLOW_DOWNLOADS:-true}
+
+      # nginx proxies the API on the frontend's own origin,
+      # so CORS is only needed for callers that reach the backend port directly.
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:51800,http://127.0.0.1:51800,http://localhost:5173}
+    volumes:
+      # The ephemeris (~17 MB) and cached CelesTrak elements persist here,
+      # so they survive rebuilds and are downloaded once rather than on every start.
+      - astronomy-data:/app/data
+    ports:
+      - "${BACKEND_PORT:-51801}:8000"
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8000/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      # First boot downloads the ephemeris; don't call it unhealthy meanwhile.
+      start_period: 120s
+    networks: [overpass]
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      target: runtime
+    image: overpass-frontend
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_started
+    ports:
+      - "${FRONTEND_PORT:-51800}:80"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks: [overpass]
+
+volumes:
+  astronomy-data:
+
+networks:
+  overpass:
+    driver: bridge
